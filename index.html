@@ -62,7 +62,7 @@
         }
     </style>
 </head>
-<body class="text-gray-800 pb-28">
+<body class="text-gray-800 pb-8">
 
     <!-- App Header -->
     <header class="bg-onomo-black text-white p-4 sticky top-0 z-40 shadow-md">
@@ -231,18 +231,16 @@
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Comments</label>
                     <textarea id="supervisor-comments" class="data-input w-full p-2 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="2" oninput="triggerSave()"></textarea>
                 </div>
+
+                <!-- Moved Generate Report Button -->
+                <button id="btn-generate-report" onclick="generateEmailReport()" class="w-full bg-onomo-yellow text-onomo-black p-4 rounded-xl shadow-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-yellow-400 transition-colors mt-6 opacity-50 cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-paper-plane"></i> Generate & Send Report
+                </button>
             </div>
             
         </section>
 
     </main>
-
-    <!-- Floating Action Button -->
-    <div class="fixed bottom-4 left-0 right-0 px-4 max-w-2xl mx-auto z-30">
-        <button onclick="generateEmailReport()" class="w-full bg-onomo-yellow text-onomo-black p-4 rounded-xl shadow-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-yellow-400 transition-colors">
-            <i class="fa-solid fa-paper-plane"></i> Generate & Send Report
-        </button>
-    </div>
 
     <!-- Modals & Toasts -->
 
@@ -770,27 +768,37 @@
             });
             
             // Dedicated Task
-            if (appState.data['scan_dedicated_task']) completedScans++;
+        if (appState.data['scan_dedicated_task']) completedScans++;
 
-            // Supervisor
-            if (appState.data['sup_unlocked']) completedScans++;
-            
-            // Ensure no division by zero logic
-            const safeTotal = appState.totalRequiredScans > 0 ? appState.totalRequiredScans : 1;
-            const percentage = Math.min(100, Math.round((completedScans / safeTotal) * 100));
-            appState.currentProgress = percentage;
-            
-            document.getElementById('progress-bar').style.width = `${percentage}%`;
-            document.getElementById('progress-text').innerText = `${percentage}% (${completedScans}/${appState.totalRequiredScans})`;
-            
-            if(percentage === 100) {
-                 document.getElementById('progress-bar').classList.replace('bg-onomo-yellow', 'bg-green-500');
-            } else {
-                 document.getElementById('progress-bar').classList.replace('bg-green-500', 'bg-onomo-yellow');
-            }
+        // Supervisor
+        if (appState.data['sup_unlocked']) completedScans++;
+        
+        // Ensure no division by zero logic
+        const safeTotal = appState.totalRequiredScans > 0 ? appState.totalRequiredScans : 1;
+        const percentage = Math.min(100, Math.round((completedScans / safeTotal) * 100));
+        appState.currentProgress = percentage;
+        
+        document.getElementById('progress-bar').style.width = `${percentage}%`;
+        document.getElementById('progress-text').innerText = `${percentage}% (${completedScans}/${appState.totalRequiredScans})`;
+        
+        const reportBtn = document.getElementById('btn-generate-report');
+        
+        if(percentage === 100) {
+             document.getElementById('progress-bar').classList.replace('bg-onomo-yellow', 'bg-green-500');
+             if(reportBtn) {
+                 reportBtn.disabled = false;
+                 reportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+             }
+        } else {
+             document.getElementById('progress-bar').classList.replace('bg-green-500', 'bg-onomo-yellow');
+             if(reportBtn) {
+                 reportBtn.disabled = true;
+                 reportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+             }
         }
+    }
 
-        function updateVisualStates() {
+    function updateVisualStates() {
             const currentHour = new Date().getHours();
             let hasMissedTasks = false;
             const shiftBlocks = SHIFTS[appState.currentShift];
@@ -858,15 +866,8 @@
                 }
             });
 
-            const toast = document.getElementById('alert-toast');
-            if (hasMissedTasks) {
-                document.getElementById('alert-title').innerText = "Missed Inspection";
-                document.getElementById('alert-message').innerText = "Previous hourly checks were left incomplete.";
-                toast.classList.remove('hidden');
-                setTimeout(() => toast.classList.remove('opacity-0'), 10);
-            } else if (toast.querySelector('#alert-title').innerText === "Missed Inspection") {
-                toast.classList.add('hidden');
-            }
+            // Removed aggressive alert toast for missed inspections here.
+            // It was causing clutter for the general user.
         }
 
         // --- QR Scanner Logic ---
@@ -904,7 +905,11 @@
             if (decodedText.trim() === activeScanState.expectedQr) {
                 closeScanner();
                 appState.data[activeScanState.keyId] = true;
-                triggerSave(); // also calls populateUIFromState() to update buttons
+                
+                // Force the UI to re-render the buttons immediately to show "Done"
+                renderUIButtonsOnly(); 
+                
+                triggerSave(); // also calls updateVisualStates and updateProgressBar
                 
                 const sToast = document.getElementById('success-toast');
                 sToast.classList.remove('hidden');
