@@ -73,7 +73,7 @@
             </div>
             <div class="flex flex-col items-end gap-1">
                 <div id="auth-status" class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-300 font-mono">Connecting...</div>
-                <button onclick="toggleModal('qr-guide-modal')" class="text-[10px] bg-onomo-yellow text-onomo-black font-bold px-2 py-1 rounded shadow hover:bg-yellow-400">
+                <button onclick="toggleModal('qr-guide-modal')" class="text-[10px] bg-onomo-yellow text-onomo-black font-bold px-2 py-1 rounded shadow hover:bg-yellow-400 transition-colors">
                     <i class="fa-solid fa-qrcode"></i> QR Guide
                 </button>
             </div>
@@ -255,14 +255,16 @@
             </div>
             <button onclick="closeScanner()" class="text-gray-400 hover:text-white text-3xl px-2">&times;</button>
         </div>
-        <div class="flex-1 flex items-center justify-center bg-black p-4">
+        <div class="flex-1 flex items-center justify-center bg-black p-4 relative">
             <div id="qr-reader" class="w-full max-w-sm"></div>
+            <!-- Fallback text while loading -->
+            <p id="camera-loading-text" class="absolute text-gray-500 text-sm z-[-1]">Initializing Camera...</p>
         </div>
         
         <!-- Developer fallback -->
         <div class="p-6 bg-gray-900 text-center border-t border-gray-800">
             <p class="text-gray-500 text-xs mb-2">Camera not working or testing locally?</p>
-            <button onclick="simulateSuccessfulScan()" class="bg-gray-800 border border-gray-700 text-gray-300 text-xs py-2 px-4 rounded hover:bg-gray-700">
+            <button onclick="simulateSuccessfulScan()" class="bg-gray-800 border border-gray-700 text-gray-300 text-xs py-2 px-4 rounded hover:bg-gray-700 transition-colors">
                 Simulate Successful Scan
             </button>
         </div>
@@ -344,9 +346,9 @@
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ENVIRONMENT SETUP
-        const appId = "onomo-checklist-app"; // Hardcoded to satisfy strict path rules
+        const appId = "onomo-checklist-app";
         
-        // --- INJECTED FIREBASE CONFIG ---
+        // --- YOUR LIVE FIREBASE CONFIGURATION ---
         const firebaseConfig = {
           apiKey: "AIzaSyCOuyE3BXTHQ5L1iPMYJCiB7_GR63FucQQ",
           authDomain: "onomo-attendant-app.firebaseapp.com",
@@ -414,19 +416,27 @@
         // Active Scan Context
         let activeScanState = { keyId: null, expectedQr: null, label: null };
 
+        // Helper to sanitize time strings for HTML IDs (removes colons)
+        function sanitizeId(str) {
+            return str.replace(/[^a-zA-Z0-9_-]/g, '');
+        }
+
         window.onload = async () => {
             document.getElementById('doc-date').value = appState.dateString;
             
             document.getElementById('btn-shift-morning').onclick = () => setShift('Morning');
             document.getElementById('btn-shift-late').onclick = () => setShift('Late');
 
+            // Render UI immediately so it doesn't wait for network delays
+            renderUI();
+            
             await initAuth();
             setInterval(updateVisualStates, 60000); // Check missed hours every minute
         };
 
         async function initAuth() {
             try {
-                // Anonymous auth for field workers
+                // Connect to Firebase Anonymous Auth
                 await signInAnonymously(auth);
                 
                 onAuthStateChanged(auth, (user) => {
@@ -445,10 +455,10 @@
                 document.getElementById('auth-status').classList.add('text-red-400');
                 
                 const errToast = document.getElementById('alert-toast');
-                document.getElementById('alert-title').innerText = "Firebase Auth Error";
-                document.getElementById('alert-message').innerText = "Please enable 'Anonymous' sign-in in Firebase Console. Error: " + error.code;
+                document.getElementById('alert-title').innerText = "Authentication Error";
+                document.getElementById('alert-message').innerText = "Please ensure Anonymous Sign-In is enabled in Firebase Console. Error: " + error.code;
                 errToast.classList.remove('hidden');
-                setTimeout(() => errToast.classList.add('hidden'), 8000);
+                setTimeout(() => errToast.classList.add('hidden'), 10000);
             }
         }
 
@@ -473,32 +483,33 @@
         }
 
         async function loadData() {
-            if (!currentUser) {
-                renderUI();
-                return;
-            }
+            if (!currentUser) return;
+            
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'onomo_checklists_v2', getDocId());
             try {
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     appState.data = docSnap.data();
+                } else {
+                    appState.data = {}; // Reset for new shift
                 }
             } catch (error) {
-                console.error("Firebase Load Error:", error);
+                console.error("Firebase Database Error:", error);
                 document.getElementById('auth-status').innerText = 'DB Error';
                 document.getElementById('auth-status').classList.remove('text-green-400');
                 document.getElementById('auth-status').classList.add('text-red-400');
                 
                 const errToast = document.getElementById('alert-toast');
-                document.getElementById('alert-title').innerText = "Firebase Database Error";
-                document.getElementById('alert-message').innerText = "Ensure Firestore Database is created in Test Mode. Error: " + error.code;
+                document.getElementById('alert-title').innerText = "Database Error";
+                document.getElementById('alert-message').innerText = "Could not load data. Ensure Firestore Database exists and is in Test Mode. Error: " + error.code;
                 errToast.classList.remove('hidden');
-                setTimeout(() => errToast.classList.add('hidden'), 8000);
+                setTimeout(() => errToast.classList.add('hidden'), 10000);
             }
-            renderUI(); 
+            populateUIFromState(); 
         }
 
         window.triggerSave = function() {
+            // Collect all inputs
             document.querySelectorAll('.data-input').forEach(el => {
                 if (el.type === 'checkbox') {
                     appState.data[el.id] = el.checked;
@@ -522,7 +533,7 @@
                 showSaveToast();
             } catch (error) {
                 console.error("Firebase Save Error:", error);
-                document.getElementById('auth-status').innerText = 'Save Failed';
+                document.getElementById('auth-status').innerText = 'Save Error';
                 document.getElementById('auth-status').classList.remove('text-green-400');
                 document.getElementById('auth-status').classList.add('text-red-400');
                 
@@ -530,7 +541,7 @@
                 document.getElementById('alert-title').innerText = "Failed to Save Data";
                 document.getElementById('alert-message').innerText = "Could not save to Firebase. Error: " + error.code;
                 errToast.classList.remove('hidden');
-                setTimeout(() => errToast.classList.add('hidden'), 5000);
+                setTimeout(() => errToast.classList.add('hidden'), 6000);
             }
         }
 
@@ -545,37 +556,44 @@
             const dtContainer = document.getElementById('dedicated-task-btn-container');
             if (dtContainer) dtContainer.innerHTML = getScanBtnHTML('scan_dedicated_task', 'QR_DEDICATED_TASK', 'Dedicated Task');
 
-            // Section A: General
+            // Section A: General (Now completely converted to Accordions/Dropdowns)
             shiftBlocks.general.forEach(block => {
+                const safeTimeId = sanitizeId(block.time); // e.g. "0600"
                 let scansHtml = '';
                 block.tasks.forEach(t => {
-                    const dataKey = `scan_gen_${block.time}_${t.qr}`;
+                    const dataKey = `scan_gen_${safeTimeId}_${t.qr}`;
                     scansHtml += `
-                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
-                        <span class="text-xs font-semibold text-gray-700">${t.name}</span>
+                    <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                        <span class="text-xs font-bold text-gray-700">${t.name}</span>
                         ${getScanBtnHTML(dataKey, t.qr, t.name)}
                     </div>`;
-                    appState.totalRequiredScans++; // Add to total
+                    appState.totalRequiredScans++; // Add to total required
                 });
 
                 genHtml += `
-                <div id="gen-block-${block.time}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
-                    <div class="p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                        <div class="flex flex-col">
-                            <span class="text-[10px] font-bold text-onomo-yellow bg-gray-800 px-2 py-0.5 rounded uppercase tracking-wider mb-1 w-max">${block.label}</span>
+                <div id="gen-block-${safeTimeId}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+                    <button class="w-full p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('acc-gen-${safeTimeId}')">
+                        <div class="flex flex-col items-start text-left">
+                            <span class="text-[10px] font-bold text-onomo-yellow bg-gray-800 px-2 py-0.5 rounded uppercase tracking-wider mb-1">${block.label}</span>
                             <span class="font-bold text-gray-800 text-sm">${block.title}</span>
                         </div>
-                        <span id="gen-status-${block.time}" class="text-[10px] text-gray-500 font-medium">Pending</span>
-                    </div>
-                    <div class="p-3 space-y-2">
-                        ${scansHtml}
+                        <div class="flex items-center gap-3">
+                            <span id="gen-status-${safeTimeId}" class="text-[10px] text-gray-500 font-medium whitespace-nowrap">Pending</span>
+                            <i class="fa-solid fa-chevron-down text-gray-400 transition-transform" id="icon-gen-${safeTimeId}"></i>
+                        </div>
+                    </button>
+                    <div id="acc-gen-${safeTimeId}" class="accordion-content bg-white">
+                        <div class="p-3 space-y-2 bg-gray-50/50">
+                            ${scansHtml}
+                        </div>
                     </div>
                 </div>`;
             });
             document.getElementById('section-general').innerHTML = genHtml;
 
-            // Section B: Toilets
+            // Section B: Toilets (Accordions/Dropdowns)
             shiftBlocks.toilets.forEach(time => {
+                const safeTimeId = sanitizeId(time); // e.g. "0600"
                 const label = appState.currentShift === 'Morning' 
                     ? `${time}–${String(parseInt(time)+1).padStart(2, '0')}:00` 
                     : `${time}–${String(parseInt(time)+1).padStart(2, '0')}:00`;
@@ -583,33 +601,33 @@
                 appState.totalRequiredScans += 3; // Lobby, Rest, Staff
 
                 toiHtml += `
-                <div id="toi-block-${time}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
-                    <button class="w-full p-3 bg-yellow-50/50 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('acc-toi-${time}')">
-                        <div class="flex flex-col items-start">
+                <div id="toi-block-${safeTimeId}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+                    <button class="w-full p-3 bg-yellow-50/50 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('acc-toi-${safeTimeId}')">
+                        <div class="flex flex-col items-start text-left">
                             <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">${label}</span>
                             <span class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-restroom text-gray-400 mr-1"></i> Toilet Checks</span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span id="toi-status-${time}" class="text-[10px] text-gray-500 font-medium">Pending</span>
-                            <i class="fa-solid fa-chevron-down text-gray-400 transition-transform" id="icon-toi-${time}"></i>
+                            <span id="toi-status-${safeTimeId}" class="text-[10px] text-gray-500 font-medium whitespace-nowrap">Pending</span>
+                            <i class="fa-solid fa-chevron-down text-gray-400 transition-transform" id="icon-toi-${safeTimeId}"></i>
                         </div>
                     </button>
-                    <div id="acc-toi-${time}" class="accordion-content bg-white border-t border-yellow-100">
+                    <div id="acc-toi-${safeTimeId}" class="accordion-content bg-white border-t border-yellow-100">
                         <div class="p-3 space-y-2 bg-yellow-50/20">
                             <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
                                 <span class="text-xs font-bold text-gray-700">Lobby Toilets</span>
-                                ${getScanBtnHTML(`scan_tl_${time}`, 'QR_TOILET_LOBBY', 'Lobby Toilet')}
+                                ${getScanBtnHTML(`scan_tl_${safeTimeId}`, 'QR_TOILET_LOBBY', 'Lobby Toilet')}
                             </div>
                             <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
                                 <span class="text-xs font-bold text-gray-700">Restaurant Toilets</span>
-                                ${getScanBtnHTML(`scan_tr_${time}`, 'QR_TOILET_REST', 'Restaurant Toilet')}
+                                ${getScanBtnHTML(`scan_tr_${safeTimeId}`, 'QR_TOILET_REST', 'Restaurant Toilet')}
                             </div>
                             <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
                                 <span class="text-xs font-bold text-gray-700">Staff Toilets</span>
-                                ${getScanBtnHTML(`scan_ts_${time}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
+                                ${getScanBtnHTML(`scan_ts_${safeTimeId}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
                             </div>
                             <div class="mt-2">
-                                <input type="text" id="initials_${time}" placeholder="Attendant Initials" class="data-input w-full p-2 text-xs font-bold text-center border border-gray-300 rounded focus:border-onomo-yellow outline-none uppercase bg-white" oninput="triggerSave()">
+                                <input type="text" id="initials_${safeTimeId}" placeholder="Attendant Initials" class="data-input w-full p-2 text-xs font-bold text-center border border-gray-300 rounded focus:border-onomo-yellow outline-none uppercase bg-white" oninput="triggerSave()">
                             </div>
                         </div>
                     </div>
@@ -650,6 +668,7 @@
         }
 
         function populateUIFromState() {
+            // Apply all data from appState back into the HTML inputs
             document.querySelectorAll('.data-input').forEach(el => {
                 if (el.type === 'checkbox') {
                     el.checked = !!appState.data[el.id];
@@ -657,6 +676,9 @@
                     el.value = appState.data[el.id] || '';
                 }
             });
+            
+            // Re-render scan buttons correctly
+            renderUIButtonsOnly();
             
             const isSupUnlocked = !!appState.data['sup_unlocked'];
             if (isSupUnlocked) {
@@ -674,6 +696,58 @@
             updateVisualStates();
             updateProgressBar();
         }
+        
+        function renderUIButtonsOnly() {
+            // Updates just the scan buttons to change to "Done" state without collapsing accordions
+            const shiftBlocks = SHIFTS[appState.currentShift];
+            
+            const dtContainer = document.getElementById('dedicated-task-btn-container');
+            if (dtContainer) dtContainer.innerHTML = getScanBtnHTML('scan_dedicated_task', 'QR_DEDICATED_TASK', 'Dedicated Task');
+            
+            shiftBlocks.general.forEach(block => {
+                const safeTimeId = sanitizeId(block.time);
+                const accGen = document.getElementById(`acc-gen-${safeTimeId}`);
+                if (!accGen) return;
+                
+                let scansHtml = '';
+                block.tasks.forEach(t => {
+                    const dataKey = `scan_gen_${safeTimeId}_${t.qr}`;
+                    scansHtml += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                        <span class="text-xs font-bold text-gray-700">${t.name}</span>
+                        ${getScanBtnHTML(dataKey, t.qr, t.name)}
+                    </div>`;
+                });
+                accGen.querySelector('div').innerHTML = scansHtml;
+            });
+            
+            shiftBlocks.toilets.forEach(time => {
+                const safeTimeId = sanitizeId(time);
+                const accToi = document.getElementById(`acc-toi-${safeTimeId}`);
+                if (!accToi) return;
+                
+                // Preserve initials input
+                const initVal = document.getElementById(`initials_${safeTimeId}`)?.value || '';
+                
+                accToi.querySelector('div').innerHTML = `
+                    <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                        <span class="text-xs font-bold text-gray-700">Lobby Toilets</span>
+                        ${getScanBtnHTML(`scan_tl_${safeTimeId}`, 'QR_TOILET_LOBBY', 'Lobby Toilet')}
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                        <span class="text-xs font-bold text-gray-700">Restaurant Toilets</span>
+                        ${getScanBtnHTML(`scan_tr_${safeTimeId}`, 'QR_TOILET_REST', 'Restaurant Toilet')}
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                        <span class="text-xs font-bold text-gray-700">Staff Toilets</span>
+                        ${getScanBtnHTML(`scan_ts_${safeTimeId}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
+                    </div>
+                    <div class="mt-2">
+                        <input type="text" id="initials_${safeTimeId}" placeholder="Attendant Initials" class="data-input w-full p-2 text-xs font-bold text-center border border-gray-300 rounded focus:border-onomo-yellow outline-none uppercase bg-white" oninput="triggerSave()" value="${initVal}">
+                    </div>
+                `;
+            });
+        }
 
         function updateProgressBar() {
             let completedScans = 0;
@@ -681,16 +755,18 @@
             
             // General
             shiftBlocks.general.forEach(block => {
+                const safeTimeId = sanitizeId(block.time);
                 block.tasks.forEach(t => {
-                    if (appState.data[`scan_gen_${block.time}_${t.qr}`]) completedScans++;
+                    if (appState.data[`scan_gen_${safeTimeId}_${t.qr}`]) completedScans++;
                 });
             });
             
             // Toilets
             shiftBlocks.toilets.forEach(time => {
-                if (appState.data[`scan_tl_${time}`]) completedScans++;
-                if (appState.data[`scan_tr_${time}`]) completedScans++;
-                if (appState.data[`scan_ts_${time}`]) completedScans++;
+                const safeTimeId = sanitizeId(time);
+                if (appState.data[`scan_tl_${safeTimeId}`]) completedScans++;
+                if (appState.data[`scan_tr_${safeTimeId}`]) completedScans++;
+                if (appState.data[`scan_ts_${safeTimeId}`]) completedScans++;
             });
             
             // Dedicated Task
@@ -698,8 +774,10 @@
 
             // Supervisor
             if (appState.data['sup_unlocked']) completedScans++;
-
-            const percentage = Math.min(100, Math.round((completedScans / appState.totalRequiredScans) * 100));
+            
+            // Ensure no division by zero logic
+            const safeTotal = appState.totalRequiredScans > 0 ? appState.totalRequiredScans : 1;
+            const percentage = Math.min(100, Math.round((completedScans / safeTotal) * 100));
             appState.currentProgress = percentage;
             
             document.getElementById('progress-bar').style.width = `${percentage}%`;
@@ -720,15 +798,16 @@
             // General Status Check
             shiftBlocks.general.forEach(block => {
                 const blockHour = parseInt(block.time.split(':')[0], 10);
-                const blockEl = document.getElementById(`gen-block-${block.time}`);
-                const statusText = document.getElementById(`gen-status-${block.time}`);
+                const safeTimeId = sanitizeId(block.time);
+                const blockEl = document.getElementById(`gen-block-${safeTimeId}`);
+                const statusText = document.getElementById(`gen-status-${safeTimeId}`);
                 if (!blockEl) return;
 
                 blockEl.classList.remove('border-red-500', 'border-2', 'ring-2', 'ring-onomo-yellow', 'shadow-md', 'border-green-500');
                 
                 let allScanned = true;
                 block.tasks.forEach(t => {
-                    if (!appState.data[`scan_gen_${block.time}_${t.qr}`]) allScanned = false;
+                    if (!appState.data[`scan_gen_${safeTimeId}_${t.qr}`]) allScanned = false;
                 });
 
                 if (allScanned) {
@@ -751,15 +830,16 @@
             // Toilets Status Check
             shiftBlocks.toilets.forEach(time => {
                 const blockHour = parseInt(time.split(':')[0], 10);
-                const blockEl = document.getElementById(`toi-block-${time}`);
-                const statusText = document.getElementById(`toi-status-${time}`);
+                const safeTimeId = sanitizeId(time);
+                const blockEl = document.getElementById(`toi-block-${safeTimeId}`);
+                const statusText = document.getElementById(`toi-status-${safeTimeId}`);
                 if (!blockEl) return;
 
                 blockEl.classList.remove('border-red-500', 'border-2', 'ring-2', 'ring-onomo-yellow', 'shadow-md', 'border-green-500');
                 
-                const isTl = !!appState.data[`scan_tl_${time}`];
-                const isTr = !!appState.data[`scan_tr_${time}`];
-                const isTs = !!appState.data[`scan_ts_${time}`];
+                const isTl = !!appState.data[`scan_tl_${safeTimeId}`];
+                const isTr = !!appState.data[`scan_tr_${safeTimeId}`];
+                const isTs = !!appState.data[`scan_ts_${safeTimeId}`];
                 
                 if (isTl && isTr && isTs) {
                     statusText.innerText = "Done";
@@ -780,9 +860,11 @@
 
             const toast = document.getElementById('alert-toast');
             if (hasMissedTasks) {
+                document.getElementById('alert-title').innerText = "Missed Inspection";
+                document.getElementById('alert-message').innerText = "Previous hourly checks were left incomplete.";
                 toast.classList.remove('hidden');
                 setTimeout(() => toast.classList.remove('opacity-0'), 10);
-            } else {
+            } else if (toast.querySelector('#alert-title').innerText === "Missed Inspection") {
                 toast.classList.add('hidden');
             }
         }
@@ -805,7 +887,10 @@
                 { fps: 10, qrbox: { width: 250, height: 250 } },
                 onScanSuccess,
                 onScanFailure
-            ).catch(err => console.warn("Camera init failed.", err));
+            ).catch(err => {
+                console.warn("Camera init failed, using simulated interface instead.", err);
+                document.getElementById('camera-loading-text').innerText = "Camera not detected. Use simulate button below.";
+            });
         };
 
         window.closeScanner = function() {
@@ -819,8 +904,7 @@
             if (decodedText.trim() === activeScanState.expectedQr) {
                 closeScanner();
                 appState.data[activeScanState.keyId] = true;
-                triggerSave(); 
-                renderUI(); 
+                triggerSave(); // also calls populateUIFromState() to update buttons
                 
                 const sToast = document.getElementById('success-toast');
                 sToast.classList.remove('hidden');
@@ -835,7 +919,9 @@
             }
         }
 
-        function onScanFailure(error) {}
+        function onScanFailure(error) {
+            // continuously fails while looking for QR, ignore
+        }
 
         window.simulateSuccessfulScan = function() {
             if (activeScanState.expectedQr) {
@@ -846,7 +932,12 @@
         // --- UI Utils ---
         window.toggleAccordion = function(id) {
             const el = document.getElementById(id);
-            const icon = document.getElementById(id.replace('acc-', 'icon-').replace('guidelines-content', 'icon-guidelines-content'));
+            if (!el) return;
+            
+            // Build the icon ID matching our sanitized convention
+            const iconId = id.replace('acc-', 'icon-');
+            const icon = document.getElementById(iconId);
+            
             if (el.classList.contains('open')) {
                 el.classList.remove('open');
                 if(icon) icon.style.transform = 'rotate(0deg)';
@@ -904,9 +995,10 @@
             body += `SECTION A: GENERAL AREAS WORKFLOW\n`;
             body += `----------------------------------------------\n`;
             shiftBlocks.general.forEach(block => {
+                const safeTimeId = sanitizeId(block.time);
                 body += `[${block.time}] ${block.title}\n`;
                 block.tasks.forEach(t => {
-                    const m = d[`scan_gen_${block.time}_${t.qr}`] ? 'Scanned' : 'Missed';
+                    const m = d[`scan_gen_${safeTimeId}_${t.qr}`] ? 'Scanned' : 'Missed';
                     body += `    - ${t.name}: ${m}\n`;
                 });
             });
@@ -914,10 +1006,11 @@
             body += `\nSECTION B: HOURLY TOILETS WORKFLOW\n`;
             body += `----------------------------------------------\n`;
             shiftBlocks.toilets.forEach(time => {
-                const tl = d[`scan_tl_${time}`] ? 'Y' : 'N';
-                const tr = d[`scan_tr_${time}`] ? 'Y' : 'N';
-                const ts = d[`scan_ts_${time}`] ? 'Y' : 'N';
-                const init = d[`initials_${time}`] || '--';
+                const safeTimeId = sanitizeId(time);
+                const tl = d[`scan_tl_${safeTimeId}`] ? 'Y' : 'N';
+                const tr = d[`scan_tr_${safeTimeId}`] ? 'Y' : 'N';
+                const ts = d[`scan_ts_${safeTimeId}`] ? 'Y' : 'N';
+                const init = d[`initials_${safeTimeId}`] || '--';
                 body += `[${time}] Lobby: ${tl} | Rest: ${tr} | Staff: ${ts} | Initials: ${init}\n`;
             });
             
