@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ONOMO Public Areas Checklist</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- HTML5 QR Code Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* ONOMO Brand Colors */
+        .bg-onomo-black { background-color: #1a1a1a; }
+        .text-onomo-black { color: #1a1a1a; }
+        .bg-onomo-yellow { background-color: #f2c75c; }
+        .text-onomo-yellow { color: #f2c75c; }
+        .border-onomo-yellow { border-color: #f2c75c; }
+        .ring-onomo-yellow { --tw-ring-color: #f2c75c; }
+        
+        /* Smooth Accordion */
+        .accordion-content {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .accordion-content.open {
+            max-height: 3000px;
+            opacity: 1;
+        }
+        
+        /* Scanner Viewport Fixes */
+        #qr-reader {
+            width: 100%;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: none !important;
+        }
+        #qr-reader__scan_region {
+            background: black;
+        }
+        
+        /* Custom Checkbox */
+        .check-large {
+            width: 1.5rem;
+            height: 1.5rem;
+            cursor: pointer;
+            accent-color: #f2c75c;
+        }
+    </style>
+</head>
+<body class="text-gray-800 pb-28">
+
+    <!-- App Header -->
+    <header class="bg-onomo-black text-white p-4 sticky top-0 z-40 shadow-md">
+        <div class="flex justify-between items-center mb-3">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-hotel text-onomo-yellow text-2xl"></i>
+                <h1 class="font-bold text-lg leading-tight uppercase tracking-wide">ONOMO Sandton<br><span class="text-xs text-gray-300 font-medium normal-case">Public Areas Checklist</span></h1>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+                <div id="auth-status" class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-300 font-mono">Connecting...</div>
+                <button onclick="toggleModal('qr-guide-modal')" class="text-[10px] bg-onomo-yellow text-onomo-black font-bold px-2 py-1 rounded shadow hover:bg-yellow-400">
+                    <i class="fa-solid fa-qrcode"></i> QR Guide
+                </button>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mt-2">
+            <div class="flex justify-between text-[10px] font-bold text-gray-300 uppercase mb-1">
+                <span>Shift Progress (Scans Completed)</span>
+                <span id="progress-text">0%</span>
+            </div>
+            <div class="bg-gray-700 h-2 w-full rounded-full overflow-hidden relative">
+                <div id="progress-bar" class="bg-onomo-yellow h-full w-0 transition-all duration-500 ease-out"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-2xl mx-auto p-4 space-y-6">
+        
+        <!-- Setup Inputs -->
+        <section class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date</label>
+                    <input type="date" id="doc-date" class="w-full p-2.5 bg-gray-100 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 outline-none" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Shift</label>
+                    <div class="flex bg-gray-100 rounded-lg p-1">
+                        <button id="btn-shift-morning" class="flex-1 text-sm py-1.5 rounded-md bg-white shadow-sm font-bold text-onomo-black transition">Morning</button>
+                        <button id="btn-shift-late" class="flex-1 text-sm py-1.5 rounded-md text-gray-500 font-semibold transition">Late</button>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Attendant Name</label>
+                <input type="text" id="attendant-name" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow focus:ring-1 focus:ring-onomo-yellow outline-none text-sm transition-colors" placeholder="Enter attendant name" oninput="triggerSave()">
+            </div>
+        </section>
+
+        <!-- Expected Guidelines Accordion -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <button class="w-full bg-gray-800 text-white p-3.5 flex justify-between items-center font-bold text-sm focus:outline-none" onclick="toggleAccordion('guidelines-content')">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-list-check text-onomo-yellow text-lg"></i> Expected Guidelines</span>
+                <i class="fa-solid fa-chevron-down transition-transform" id="icon-guidelines-content"></i>
+            </button>
+            <div id="guidelines-content" class="accordion-content bg-white border-t border-gray-100 text-sm">
+                <div class="p-4 space-y-4">
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-door-open text-gray-400"></i> Entrances & Parking</h4>
+                        <p class="text-gray-600 text-xs">Sweep drop-off area. Clean glass doors. Remove visible litter from parking, boom gates, and approach.</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-couch text-gray-400"></i> Reception & Lobbies</h4>
+                        <p class="text-gray-600 text-xs">Vacuum/sweep floors. Wipe furniture. Polish glass. Skirting dust-free. Empty bins.</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-utensils text-gray-400"></i> Restaurants & Outside Seating</h4>
+                        <p class="text-gray-600 text-xs">Wipe tables/chairs. Clean table bases. Remove floor marks. Empty bins. Ensure neat presentation.</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-elevator text-gray-400"></i> Corridors & Lifts</h4>
+                        <p class="text-gray-600 text-xs">Vacuum carpets. Spot-clean walls/skirting. Wipe lift doors and buttons. Clear room service trays if visible.</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-briefcase text-gray-400"></i> Back Offices & Canteen</h4>
+                        <p class="text-gray-600 text-xs">Empty bins. Wipe canteen tables and counters. Sweep/mop canteen floor. Ensure staff areas are presentable.</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-restroom text-gray-400"></i> Toilets (Lobby, Rest, Staff)</h4>
+                        <p class="text-gray-600 text-xs">Clean & sanitise urinals/toilets. Floors dry. Replenish toilet paper, soap, towels. Empty bins. No odours.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dedicated Task of the Day -->
+        <section class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-onomo-yellow mt-6">
+            <h3 class="font-bold text-lg text-onomo-black mb-1 flex items-center gap-2 uppercase">
+                <i class="fa-solid fa-star text-onomo-yellow"></i> Dedicated Task
+            </h3>
+            <p class="text-xs text-gray-500 mb-3">Supervisor to assign a specific task for the shift.</p>
+            <input type="text" id="dedicated-task-desc" class="data-input w-full p-2.5 mb-3 border border-gray-300 rounded-lg focus:border-onomo-yellow focus:ring-1 focus:ring-onomo-yellow outline-none text-sm transition-colors" placeholder="e.g., Deep clean lobby chandeliers" oninput="triggerSave()">
+            <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                <span class="text-xs font-semibold text-gray-700">Mark as Completed</span>
+                <span id="dedicated-task-btn-container"></span>
+            </div>
+        </section>
+
+        <!-- SECTION A: General Areas -->
+        <div class="mt-6">
+            <h3 class="font-bold text-lg text-onomo-black mb-3 flex items-center gap-2 uppercase">
+                <span class="bg-onomo-yellow text-onomo-black w-8 h-8 rounded-full flex items-center justify-center font-black">A</span> 
+                General Areas Workflow
+            </h3>
+            <div id="section-general" class="space-y-4">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- SECTION B: Hourly Toilets -->
+        <div class="pt-4 border-t-2 border-dashed border-gray-300">
+            <h3 class="font-bold text-lg text-onomo-black mb-3 flex items-center gap-2 uppercase">
+                <span class="bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-black">B</span> 
+                Hourly Toilets Workflow
+            </h3>
+            <div id="section-toilets" class="space-y-4">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- Defect Reporting -->
+        <section class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mt-6">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Outstanding tasks / defects</label>
+            <textarea id="outstanding-tasks" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="3" oninput="triggerSave()" placeholder="Describe any issues, leaks, or damage..."></textarea>
+            
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Attendant Signature (End of Shift)</label>
+                <input type="text" id="attendant-sig" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" placeholder="Type initials/name" oninput="triggerSave()">
+            </div>
+        </section>
+
+        <!-- Supervisor Verification Section -->
+        <section class="bg-gray-800 p-5 rounded-xl shadow-sm border-t-4 border-onomo-yellow mt-8 relative overflow-hidden" id="supervisor-section">
+            
+            <h2 class="font-bold text-lg mb-4 uppercase flex items-center gap-2 text-white">
+                <i class="fa-solid fa-user-shield text-onomo-yellow"></i> Supervisor Tracker
+            </h2>
+
+            <!-- Locked State -->
+            <div id="supervisor-locked" class="text-center py-6">
+                <i class="fa-solid fa-lock text-gray-500 text-4xl mb-3"></i>
+                <p class="text-sm text-gray-400 mb-4">A supervisor must scan their unique QR code to unlock verification and allow report submission.</p>
+                <button onclick="openScanner('sup_unlocked', 'QR_SUPERVISOR', 'Supervisor Authorization')" class="bg-onomo-yellow text-onomo-black font-bold py-2.5 px-6 rounded-lg shadow-lg hover:bg-yellow-400 transition">
+                    <i class="fa-solid fa-qrcode mr-2"></i> Scan Supervisor ID
+                </button>
+            </div>
+
+            <!-- Unlocked State -->
+            <div id="supervisor-unlocked" class="hidden space-y-4 bg-white p-4 rounded-lg mt-2">
+                <div class="flex items-center gap-2 mb-2 text-green-600 font-bold text-sm bg-green-50 p-2 rounded">
+                    <i class="fa-solid fa-unlock"></i> Supervisor Authorized
+                </div>
+                
+                <div class="space-y-3" id="supervisor-checks">
+                    <!-- Checks injected via JS -->
+                </div>
+                
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Supervisor Name/Signature</label>
+                    <input type="text" id="supervisor-sig" class="data-input w-full p-2 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" placeholder="Supervisor Name" oninput="triggerSave()">
+                </div>
+                <div class="mt-3">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Comments</label>
+                    <textarea id="supervisor-comments" class="data-input w-full p-2 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="2" oninput="triggerSave()"></textarea>
+                </div>
+            </div>
+            
+        </section>
+
+    </main>
+
+    <!-- Floating Action Button -->
+    <div class="fixed bottom-4 left-0 right-0 px-4 max-w-2xl mx-auto z-30">
+        <button onclick="generateEmailReport()" class="w-full bg-onomo-yellow text-onomo-black p-4 rounded-xl shadow-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-yellow-400 transition-colors">
+            <i class="fa-solid fa-paper-plane"></i> Generate & Send Report
+        </button>
+    </div>
+
+    <!-- Modals & Toasts -->
+
+    <!-- Scanner Modal -->
+    <div id="scanner-modal" class="fixed inset-0 bg-black z-[100] hidden flex flex-col">
+        <div class="p-4 bg-gray-900 text-white flex justify-between items-center shadow-lg">
+            <div>
+                <h3 class="font-bold text-lg text-onomo-yellow">Scan QR Code</h3>
+                <p id="scanner-subtitle" class="text-xs text-gray-400">Scanning for...</p>
+            </div>
+            <button onclick="closeScanner()" class="text-gray-400 hover:text-white text-3xl px-2">&times;</button>
+        </div>
+        <div class="flex-1 flex items-center justify-center bg-black p-4">
+            <div id="qr-reader" class="w-full max-w-sm"></div>
+        </div>
+        
+        <!-- Developer fallback -->
+        <div class="p-6 bg-gray-900 text-center border-t border-gray-800">
+            <p class="text-gray-500 text-xs mb-2">Camera not working or testing locally?</p>
+            <button onclick="simulateSuccessfulScan()" class="bg-gray-800 border border-gray-700 text-gray-300 text-xs py-2 px-4 rounded hover:bg-gray-700">
+                Simulate Successful Scan
+            </button>
+        </div>
+    </div>
+
+    <!-- QR Guide Modal -->
+    <div id="qr-guide-modal" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 sticky top-0 bg-white pb-2 border-b border-gray-100">
+                <h3 class="font-bold text-lg text-onomo-black flex items-center gap-2">
+                    <i class="fa-solid fa-qrcode text-onomo-yellow"></i> Expected QR Codes
+                </h3>
+                <button onclick="toggleModal('qr-guide-modal')" class="text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Print QR codes containing exactly these exact text strings for each location:</p>
+            
+            <ul class="space-y-1 text-xs font-mono bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <!-- General -->
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_ENTRANCE</span> <span class="text-gray-500">Front Entrance</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_PARKING</span> <span class="text-gray-500">Parking Areas</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_LOBBY</span> <span class="text-gray-500">Reception Lobby</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_RESTAURANT</span> <span class="text-gray-500">Restaurant & Outside</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_CORRIDORS</span> <span class="text-gray-500">Corridors / Lifts</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_BACK_OFFICE</span> <span class="text-gray-500">Back Offices</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_CANTEEN</span> <span class="text-gray-500">Staff Canteen</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_HANDOVER</span> <span class="text-gray-500">End of Shift Handover</span></li>
+                <!-- Toilets -->
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_TOILET_LOBBY</span> <span class="text-gray-500">Lobby Toilet</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_TOILET_REST</span> <span class="text-gray-500">Restaurant Toilet</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_TOILET_STAFF</span> <span class="text-gray-500">Staff Toilet</span></li>
+                <!-- Dedicated -->
+                <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_DEDICATED_TASK</span> <span class="text-gray-500">Dedicated Task</span></li>
+                <!-- Auth -->
+                <li class="flex justify-between pt-1.5"><span class="font-bold text-blue-600">QR_SUPERVISOR</span> <span class="text-gray-500">Supervisor ID Card</span></li>
+            </ul>
+            
+            <button onclick="toggleModal('qr-guide-modal')" class="w-full mt-5 bg-gray-800 text-white font-bold py-2 rounded-lg hover:bg-gray-700">Close Guide</button>
+        </div>
+    </div>
+
+    <!-- Alert Toast (Missed/Errors) -->
+    <div id="alert-toast" class="fixed top-24 left-4 right-4 max-w-sm mx-auto bg-red-600 text-white p-4 rounded-xl shadow-2xl hidden z-50 flex items-start gap-3 border border-red-800 transition-opacity">
+        <i class="fa-solid fa-circle-exclamation text-2xl mt-0.5 text-red-200"></i>
+        <div class="flex-1">
+            <h4 class="font-bold text-sm" id="alert-title">Missed Inspection</h4>
+            <p class="text-xs text-red-100 mt-1" id="alert-message">Previous hourly checks were left incomplete.</p>
+        </div>
+        <button onclick="closeToast('alert-toast')" class="ml-auto text-red-200 hover:text-white p-1">&times;</button>
+    </div>
+
+    <!-- Success Toast (Scan OK) -->
+    <div id="success-toast" class="fixed top-24 left-4 right-4 max-w-sm mx-auto bg-green-600 text-white p-4 rounded-xl shadow-2xl hidden z-50 flex items-center gap-3 border border-green-800 transition-opacity">
+        <i class="fa-solid fa-check-circle text-2xl text-green-200"></i>
+        <div>
+            <h4 class="font-bold text-sm">Scan Successful</h4>
+            <p class="text-xs text-green-100">Location verified.</p>
+        </div>
+    </div>
+
+    <!-- Save Notification -->
+    <div id="save-toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg transition-opacity opacity-0 pointer-events-none z-50 text-xs font-mono font-bold tracking-wider">
+        <i class="fa-solid fa-cloud-arrow-up text-onomo-yellow mr-2"></i> SAVED
+    </div>
+
+    <!-- Block Action Modal -->
+    <div id="block-modal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full text-center">
+            <i class="fa-solid fa-hand text-red-500 text-4xl mb-4"></i>
+            <h3 class="font-bold text-lg text-onomo-black mb-2">Report Blocked</h3>
+            <p class="text-sm text-gray-600 mb-6">You cannot generate a report until progress is 100%. Please ensure all <strong>General Areas</strong>, <strong>Hourly Toilets</strong>, and the <strong>Supervisor Unlock</strong> are scanned.</p>
+            <button onclick="toggleModal('block-modal')" class="bg-gray-800 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 transition-colors">Understood</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment & Firebase setup
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'onomo-checklist-app';
+        let firebaseConfig = null;
+        try { firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "mock", projectId: "mock" }; } catch(e) {}
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let currentUser = null;
+        
+        // Data Structures for strict workflows
+        const SHIFTS = {
+            'Morning': {
+                general: [
+                    { time: '06:00', label: '06:00–07:00', title: 'Front Entrance, Curbside, Parking', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance'}, {qr: 'QR_PARKING', name: 'Parking'}] },
+                    { time: '07:00', label: '07:00–08:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby'}] },
+                    { time: '08:00', label: '08:00–09:00', title: 'Restaurant & Outside', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant'}] },
+                    { time: '09:00', label: '09:00–10:00', title: 'Corridors & Lift Lobbies', tasks: [{qr: 'QR_CORRIDORS', name: 'Corridors'}] },
+                    { time: '10:00', label: '10:00–11:00', title: 'Back Offices & Canteen', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office'}, {qr: 'QR_CANTEEN', name: 'Canteen'}] },
+                    { time: '11:00', label: '11:00–12:00', title: 'Restaurant Detail', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant'}] },
+                    { time: '12:00', label: '12:00–13:00', title: 'Lobby & Entrances', tasks: [{qr: 'QR_LOBBY', name: 'Lobby'}, {qr: 'QR_ENTRANCE', name: 'Entrance'}] },
+                    { time: '13:00', label: '13:00–14:00', title: 'Final Inspection & Handover', tasks: [{qr: 'QR_HANDOVER', name: 'Handover'}] }
+                ],
+                toilets: ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00']
+            },
+            'Late': {
+                general: [
+                    { time: '14:00', label: '14:00–15:00', title: 'Shift Takeover, Entrances, Parking', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance'}, {qr: 'QR_PARKING', name: 'Parking'}] },
+                    { time: '15:00', label: '15:00–16:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby'}] },
+                    { time: '16:00', label: '16:00–17:00', title: 'Restaurant', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant'}] },
+                    { time: '17:00', label: '17:00–18:00', title: 'Corridors & Lift Lobbies', tasks: [{qr: 'QR_CORRIDORS', name: 'Corridors'}] },
+                    { time: '18:00', label: '18:00–19:00', title: 'Back Offices & Canteen', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office'}, {qr: 'QR_CANTEEN', name: 'Canteen'}] },
+                    { time: '19:00', label: '19:00–20:00', title: 'Restaurant Detail', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant'}] },
+                    { time: '20:00', label: '20:00–21:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby'}] },
+                    { time: '21:00', label: '21:00–22:00', title: 'Final Inspection & Handover', tasks: [{qr: 'QR_HANDOVER', name: 'Handover'}] }
+                ],
+                toilets: ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00']
+            }
+        };
+
+        const SUPERVISOR_TASKS = [
+            "All Hourly General tasks completed",
+            "All Hourly Toilet inspections completed",
+            "Consumables replenished",
+            "Maintenance issues reported",
+            "Shift handover received"
+        ];
+
+        // State Management
+        let appState = {
+            currentShift: 'Morning',
+            dateString: new Date().toISOString().split('T')[0],
+            data: {},
+            currentProgress: 0,
+            totalRequiredScans: 0
+        };
+        
+        let saveTimeout = null;
+        let html5QrcodeScanner = null;
+        
+        // Active Scan Context
+        let activeScanState = { keyId: null, expectedQr: null, label: null };
+
+        window.onload = async () => {
+            document.getElementById('doc-date').value = appState.dateString;
+            
+            document.getElementById('btn-shift-morning').onclick = () => setShift('Morning');
+            document.getElementById('btn-shift-late').onclick = () => setShift('Late');
+
+            await initAuth();
+            setInterval(updateVisualStates, 60000); // Check missed hours
+        };
+
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('auth-status').innerText = 'Connected';
+                        document.getElementById('auth-status').classList.replace('text-gray-300', 'text-green-400');
+                        loadData(); 
+                    }
+                });
+            } catch (error) {
+                console.error("Auth error", error);
+                document.getElementById('auth-status').innerText = 'Offline';
+                document.getElementById('auth-status').classList.replace('text-gray-300', 'text-red-400');
+            }
+        }
+
+        function setShift(shiftName) {
+            appState.currentShift = shiftName;
+            const btnM = document.getElementById('btn-shift-morning');
+            const btnL = document.getElementById('btn-shift-late');
+            
+            if (shiftName === 'Morning') {
+                btnM.className = 'flex-1 text-sm py-1.5 rounded-md bg-white shadow-sm font-bold text-onomo-black transition';
+                btnL.className = 'flex-1 text-sm py-1.5 rounded-md text-gray-500 font-semibold transition';
+            } else {
+                btnL.className = 'flex-1 text-sm py-1.5 rounded-md bg-white shadow-sm font-bold text-onomo-black transition';
+                btnM.className = 'flex-1 text-sm py-1.5 rounded-md text-gray-500 font-semibold transition';
+            }
+            
+            loadData();
+        }
+
+        function getDocId() {
+            return `${appState.dateString}_${appState.currentShift}`;
+        }
+
+        async function loadData() {
+            if (!currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'onomo_checklists_v2', getDocId());
+            try {
+                const docSnap = await getDoc(docRef);
+                appState.data = docSnap.exists() ? docSnap.data() : {};
+                renderUI();
+            } catch (error) {
+                console.error("Error loading data:", error);
+            }
+        }
+
+        window.triggerSave = function() {
+            document.querySelectorAll('.data-input').forEach(el => {
+                if (el.type === 'checkbox') {
+                    appState.data[el.id] = el.checked;
+                } else {
+                    appState.data[el.id] = el.value;
+                }
+            });
+
+            updateVisualStates();
+            updateProgressBar();
+
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveToFirebase, 1000);
+        };
+
+        async function saveToFirebase() {
+            if (!currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'onomo_checklists_v2', getDocId());
+            try {
+                await setDoc(docRef, appState.data, { merge: true });
+                showSaveToast();
+            } catch (error) {
+                console.error("Error saving:", error);
+            }
+        }
+
+        // --- Render UI ---
+        function renderUI() {
+            const shiftBlocks = SHIFTS[appState.currentShift];
+            let genHtml = '';
+            let toiHtml = '';
+            appState.totalRequiredScans = 2; // +1 for Supervisor unlock, +1 for Dedicated Task
+
+            // Render Dedicated Task Button
+            const dtContainer = document.getElementById('dedicated-task-btn-container');
+            if (dtContainer) dtContainer.innerHTML = getScanBtnHTML('scan_dedicated_task', 'QR_DEDICATED_TASK', 'Dedicated Task');
+
+            // Section A: General
+            shiftBlocks.general.forEach(block => {
+                let scansHtml = '';
+                block.tasks.forEach(t => {
+                    const dataKey = `scan_gen_${block.time}_${t.qr}`;
+                    scansHtml += `
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-semibold text-gray-700">${t.name}</span>
+                        ${getScanBtnHTML(dataKey, t.qr, t.name)}
+                    </div>`;
+                    appState.totalRequiredScans++; // Add to total
+                });
+
+                genHtml += `
+                <div id="gen-block-${block.time}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+                    <div class="p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-onomo-yellow bg-gray-800 px-2 py-0.5 rounded uppercase tracking-wider mb-1 w-max">${block.label}</span>
+                            <span class="font-bold text-gray-800 text-sm">${block.title}</span>
+                        </div>
+                        <span id="gen-status-${block.time}" class="text-[10px] text-gray-500 font-medium">Pending</span>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        ${scansHtml}
+                    </div>
+                </div>`;
+            });
+            document.getElementById('section-general').innerHTML = genHtml;
+
+            // Section B: Toilets
+            shiftBlocks.toilets.forEach(time => {
+                const label = appState.currentShift === 'Morning' 
+                    ? `${time}–${String(parseInt(time)+1).padStart(2, '0')}:00` 
+                    : `${time}–${String(parseInt(time)+1).padStart(2, '0')}:00`;
+                
+                appState.totalRequiredScans += 3; // Lobby, Rest, Staff
+
+                toiHtml += `
+                <div id="toi-block-${time}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+                    <button class="w-full p-3 bg-yellow-50/50 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('acc-toi-${time}')">
+                        <div class="flex flex-col items-start">
+                            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">${label}</span>
+                            <span class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-restroom text-gray-400 mr-1"></i> Toilet Checks</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span id="toi-status-${time}" class="text-[10px] text-gray-500 font-medium">Pending</span>
+                            <i class="fa-solid fa-chevron-down text-gray-400 transition-transform" id="icon-toi-${time}"></i>
+                        </div>
+                    </button>
+                    <div id="acc-toi-${time}" class="accordion-content bg-white border-t border-yellow-100">
+                        <div class="p-3 space-y-2 bg-yellow-50/20">
+                            <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                                <span class="text-xs font-bold text-gray-700">Lobby Toilets</span>
+                                ${getScanBtnHTML(`scan_tl_${time}`, 'QR_TOILET_LOBBY', 'Lobby Toilet')}
+                            </div>
+                            <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                                <span class="text-xs font-bold text-gray-700">Restaurant Toilets</span>
+                                ${getScanBtnHTML(`scan_tr_${time}`, 'QR_TOILET_REST', 'Restaurant Toilet')}
+                            </div>
+                            <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                                <span class="text-xs font-bold text-gray-700">Staff Toilets</span>
+                                ${getScanBtnHTML(`scan_ts_${time}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
+                            </div>
+                            <div class="mt-2">
+                                <input type="text" id="initials_${time}" placeholder="Attendant Initials" class="data-input w-full p-2 text-xs font-bold text-center border border-gray-300 rounded focus:border-onomo-yellow outline-none uppercase bg-white" oninput="triggerSave()">
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('section-toilets').innerHTML = toiHtml;
+
+            // Render Supervisor Checks
+            const supContainer = document.getElementById('supervisor-checks');
+            let supHtml = '';
+            SUPERVISOR_TASKS.forEach((task, idx) => {
+                supHtml += `
+                <div class="flex items-start gap-3 bg-gray-50 p-2 rounded border border-gray-200">
+                    <input type="checkbox" id="sup_check_${idx}" class="data-input check-large mt-0.5 flex-shrink-0" onchange="triggerSave()">
+                    <label for="sup_check_${idx}" class="text-sm text-gray-700 font-medium leading-tight">${task}</label>
+                </div>`;
+            });
+            supContainer.innerHTML = supHtml;
+            
+            populateUIFromState();
+        }
+
+        function getScanBtnHTML(dataKey, expectedQr, label) {
+            const isScanned = !!appState.data[dataKey];
+            if (isScanned) {
+                return `
+                <button class="bg-green-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center gap-1 shadow-sm flex-shrink-0 cursor-default">
+                    <i class="fa-solid fa-check"></i> Done
+                </button>`;
+            } else {
+                const safeQr = expectedQr.replace(/'/g, "\\'");
+                const safeLabel = label.replace(/'/g, "\\'");
+                return `
+                <button onclick="openScanner('${dataKey}', '${safeQr}', '${safeLabel}')" class="bg-gray-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center gap-1 shadow hover:bg-gray-700 transition flex-shrink-0">
+                    <i class="fa-solid fa-qrcode"></i> Scan
+                </button>`;
+            }
+        }
+
+        function populateUIFromState() {
+            document.querySelectorAll('.data-input').forEach(el => {
+                if (el.type === 'checkbox') {
+                    el.checked = !!appState.data[el.id];
+                } else {
+                    el.value = appState.data[el.id] || '';
+                }
+            });
+            
+            const isSupUnlocked = !!appState.data['sup_unlocked'];
+            if (isSupUnlocked) {
+                document.getElementById('supervisor-locked').classList.add('hidden');
+                document.getElementById('supervisor-unlocked').classList.remove('hidden');
+                document.getElementById('supervisor-section').classList.replace('bg-gray-800', 'bg-white');
+                document.getElementById('supervisor-section').querySelector('h2').classList.replace('text-white', 'text-onomo-black');
+            } else {
+                document.getElementById('supervisor-locked').classList.remove('hidden');
+                document.getElementById('supervisor-unlocked').classList.add('hidden');
+                document.getElementById('supervisor-section').classList.replace('bg-white', 'bg-gray-800');
+                document.getElementById('supervisor-section').querySelector('h2').classList.replace('text-onomo-black', 'text-white');
+            }
+
+            updateVisualStates();
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            let completedScans = 0;
+            const shiftBlocks = SHIFTS[appState.currentShift];
+            
+            // General
+            shiftBlocks.general.forEach(block => {
+                block.tasks.forEach(t => {
+                    if (appState.data[`scan_gen_${block.time}_${t.qr}`]) completedScans++;
+                });
+            });
+            
+            // Toilets
+            shiftBlocks.toilets.forEach(time => {
+                if (appState.data[`scan_tl_${time}`]) completedScans++;
+                if (appState.data[`scan_tr_${time}`]) completedScans++;
+                if (appState.data[`scan_ts_${time}`]) completedScans++;
+            });
+            
+            // Dedicated Task
+            if (appState.data['scan_dedicated_task']) completedScans++;
+
+            // Supervisor
+            if (appState.data['sup_unlocked']) completedScans++;
+
+            const percentage = Math.min(100, Math.round((completedScans / appState.totalRequiredScans) * 100));
+            appState.currentProgress = percentage;
+            
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            document.getElementById('progress-text').innerText = `${percentage}% (${completedScans}/${appState.totalRequiredScans})`;
+            
+            if(percentage === 100) {
+                 document.getElementById('progress-bar').classList.replace('bg-onomo-yellow', 'bg-green-500');
+            } else {
+                 document.getElementById('progress-bar').classList.replace('bg-green-500', 'bg-onomo-yellow');
+            }
+        }
+
+        function updateVisualStates() {
+            const currentHour = new Date().getHours();
+            let hasMissedTasks = false;
+            const shiftBlocks = SHIFTS[appState.currentShift];
+
+            // General Status Check
+            shiftBlocks.general.forEach(block => {
+                const blockHour = parseInt(block.time.split(':')[0], 10);
+                const blockEl = document.getElementById(`gen-block-${block.time}`);
+                const statusText = document.getElementById(`gen-status-${block.time}`);
+                if (!blockEl) return;
+
+                blockEl.classList.remove('border-red-500', 'border-2', 'ring-2', 'ring-onomo-yellow', 'shadow-md', 'border-green-500');
+                
+                let allScanned = true;
+                block.tasks.forEach(t => {
+                    if (!appState.data[`scan_gen_${block.time}_${t.qr}`]) allScanned = false;
+                });
+
+                if (allScanned) {
+                    statusText.innerText = "Done";
+                    statusText.classList.replace('text-gray-500', 'text-green-600');
+                    blockEl.classList.add('border-green-500', 'border-2');
+                } else {
+                    statusText.innerText = "Pending";
+                    statusText.classList.replace('text-green-600', 'text-gray-500');
+                    
+                    if (blockHour === currentHour) {
+                        blockEl.classList.add('ring-2', 'ring-onomo-yellow', 'shadow-md');
+                    } else if (blockHour < currentHour) {
+                        blockEl.classList.add('border-red-500', 'border-2');
+                        hasMissedTasks = true;
+                    }
+                }
+            });
+
+            // Toilets Status Check
+            shiftBlocks.toilets.forEach(time => {
+                const blockHour = parseInt(time.split(':')[0], 10);
+                const blockEl = document.getElementById(`toi-block-${time}`);
+                const statusText = document.getElementById(`toi-status-${time}`);
+                if (!blockEl) return;
+
+                blockEl.classList.remove('border-red-500', 'border-2', 'ring-2', 'ring-onomo-yellow', 'shadow-md', 'border-green-500');
+                
+                const isTl = !!appState.data[`scan_tl_${time}`];
+                const isTr = !!appState.data[`scan_tr_${time}`];
+                const isTs = !!appState.data[`scan_ts_${time}`];
+                
+                if (isTl && isTr && isTs) {
+                    statusText.innerText = "Done";
+                    statusText.classList.replace('text-gray-500', 'text-green-600');
+                    blockEl.classList.add('border-green-500', 'border-2');
+                } else {
+                    statusText.innerText = "Pending";
+                    statusText.classList.replace('text-green-600', 'text-gray-500');
+                    
+                    if (blockHour === currentHour) {
+                        blockEl.classList.add('ring-2', 'ring-onomo-yellow', 'shadow-md');
+                    } else if (blockHour < currentHour) {
+                        blockEl.classList.add('border-red-500', 'border-2');
+                        hasMissedTasks = true;
+                    }
+                }
+            });
+
+            const toast = document.getElementById('alert-toast');
+            if (hasMissedTasks) {
+                toast.classList.remove('hidden');
+                setTimeout(() => toast.classList.remove('opacity-0'), 10);
+            } else {
+                toast.classList.add('hidden');
+            }
+        }
+
+        // --- QR Scanner Logic ---
+        
+        window.openScanner = function(dataKeyId, expectedQrCode, labelDescription) {
+            activeScanState = { keyId: dataKeyId, expectedQr: expectedQrCode, label: labelDescription };
+            document.getElementById('scanner-subtitle').innerText = `Target: ${expectedQrCode} (${labelDescription})`;
+            
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.remove('hidden');
+            
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5Qrcode("qr-reader");
+            }
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => console.warn("Camera init failed.", err));
+        };
+
+        window.closeScanner = function() {
+            document.getElementById('scanner-modal').classList.add('hidden');
+            if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+                html5QrcodeScanner.stop().catch(console.error);
+            }
+        };
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (decodedText.trim() === activeScanState.expectedQr) {
+                closeScanner();
+                appState.data[activeScanState.keyId] = true;
+                triggerSave(); 
+                renderUI(); 
+                
+                const sToast = document.getElementById('success-toast');
+                sToast.classList.remove('hidden');
+                setTimeout(() => sToast.classList.add('hidden'), 2500);
+            } else {
+                const errToast = document.getElementById('alert-toast');
+                document.getElementById('alert-title').innerText = "Incorrect Location Code";
+                document.getElementById('alert-message').innerText = `Scanned '${decodedText}'. Expected '${activeScanState.expectedQr}'.`;
+                errToast.classList.remove('hidden');
+                setTimeout(() => errToast.classList.add('hidden'), 4000);
+                closeScanner();
+            }
+        }
+
+        function onScanFailure(error) {}
+
+        window.simulateSuccessfulScan = function() {
+            if (activeScanState.expectedQr) {
+                onScanSuccess(activeScanState.expectedQr, null);
+            }
+        };
+
+        // --- UI Utils ---
+        window.toggleAccordion = function(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(id.replace('acc-', 'icon-').replace('guidelines-content', 'icon-guidelines-content'));
+            if (el.classList.contains('open')) {
+                el.classList.remove('open');
+                if(icon) icon.style.transform = 'rotate(0deg)';
+            } else {
+                el.classList.add('open');
+                if(icon) icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        window.toggleModal = function(id) {
+            const modal = document.getElementById(id);
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        window.closeToast = function(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showSaveToast() {
+            const toast = document.getElementById('save-toast');
+            toast.classList.remove('opacity-0');
+            setTimeout(() => { toast.classList.add('opacity-0'); }, 1500);
+        }
+
+        // --- Email Reporting ---
+        window.generateEmailReport = function() {
+            if (appState.currentProgress < 100) {
+                toggleModal('block-modal');
+                return;
+            }
+
+            const d = appState.data;
+            const shiftName = appState.currentShift;
+            const shiftBlocks = SHIFTS[shiftName];
+            
+            let body = `ONOMO HOTEL SANDTON - PUBLIC AREAS REPORT\n`;
+            body += `==============================================\n`;
+            body += `Date: ${appState.dateString}\n`;
+            body += `Shift: ${shiftName}\n`;
+            body += `Attendant: ${d['attendant-name'] || 'N/A'}\n\n`;
+            
+            body += `DEDICATED TASK OF THE DAY:\n`;
+            body += `----------------------------------------------\n`;
+            body += `Task: ${d['dedicated-task-desc'] || 'None assigned'}\n`;
+            body += `Status: ${d['scan_dedicated_task'] ? 'Completed' : 'Pending'}\n\n`;
+
+            body += `OUTSTANDING TASKS / DEFECTS:\n`;
+            body += `----------------------------------------------\n`;
+            body += `${d['outstanding-tasks'] || 'None reported.'}\n\n`;
+            
+            body += `SECTION A: GENERAL AREAS WORKFLOW\n`;
+            body += `----------------------------------------------\n`;
+            shiftBlocks.general.forEach(block => {
+                body += `[${block.time}] ${block.title}\n`;
+                block.tasks.forEach(t => {
+                    const m = d[`scan_gen_${block.time}_${t.qr}`] ? 'Scanned' : 'Missed';
+                    body += `    - ${t.name}: ${m}\n`;
+                });
+            });
+
+            body += `\nSECTION B: HOURLY TOILETS WORKFLOW\n`;
+            body += `----------------------------------------------\n`;
+            shiftBlocks.toilets.forEach(time => {
+                const tl = d[`scan_tl_${time}`] ? 'Y' : 'N';
+                const tr = d[`scan_tr_${time}`] ? 'Y' : 'N';
+                const ts = d[`scan_ts_${time}`] ? 'Y' : 'N';
+                const init = d[`initials_${time}`] || '--';
+                body += `[${time}] Lobby: ${tl} | Rest: ${tr} | Staff: ${ts} | Initials: ${init}\n`;
+            });
+            
+            body += `\nSUPERVISOR VERIFICATION:\n`;
+            body += `----------------------------------------------\n`;
+            body += `Supervisor Unlock QR: ${d['sup_unlocked'] ? 'Scanned & Verified' : 'MISSING'}\n`;
+            SUPERVISOR_TASKS.forEach((task, idx) => {
+                body += `[${!!d[`sup_check_${idx}`] ? 'X' : ' '}] ${task}\n`;
+            });
+            body += `\nComments: ${d['supervisor-comments'] || 'None'}\n`;
+            
+            body += `\nSIGNATURES:\n`;
+            body += `Attendant: ${d['attendant-sig'] || 'N/A'}\n`;
+            body += `Supervisor: ${d['supervisor-sig'] || 'N/A'}\n`;
+            
+            const subject = `Public Areas Checklist - ONOMO - ${appState.dateString} [${shiftName}]`;
+            const mailtoLink = `mailto:rdm@example.com,housekeeper@example.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoLink;
+        }
+    </script>
+</body>
+</html>
