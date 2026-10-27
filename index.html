@@ -424,7 +424,8 @@
         
         let saveTimeout = null;
         let html5QrcodeScanner = null;
-        let isScanning = false;
+        let cameraStarting = false;
+        let cameraScanning = false;
         
         // Active Scan Context
         let activeScanState = { keyId: null, expectedQr: null, label: null };
@@ -913,48 +914,57 @@
         window.openScanner = function(dataKeyId, expectedQrCode, labelDescription) {
             activeScanState = { keyId: dataKeyId, expectedQr: expectedQrCode, label: labelDescription };
             document.getElementById('scanner-subtitle').innerText = `Target: ${expectedQrCode} (${labelDescription})`;
-            
-            const modal = document.getElementById('scanner-modal');
-            modal.classList.remove('hidden');
+            document.getElementById('scanner-modal').classList.remove('hidden');
+            document.getElementById('camera-loading-text').innerText = "Initializing Camera...";
             
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5Qrcode("qr-reader");
             }
             
-            if (isScanning) return; // Prevent double starting
+            // Prevent camera collision if it is already transitioning
+            if (cameraStarting || cameraScanning) return; 
             
+            cameraStarting = true;
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 { fps: 10, qrbox: { width: 250, height: 250 } },
                 onScanSuccess,
-                onScanFailure
+                (err) => { /* ignore routine scan frame failures */ }
             ).then(() => {
-                isScanning = true;
+                cameraStarting = false;
+                cameraScanning = true;
             }).catch(err => {
+                cameraStarting = false;
                 console.warn("Camera init failed.", err);
-                document.getElementById('camera-loading-text').innerText = "Camera not detected. Use simulate button below.";
+                document.getElementById('camera-loading-text').innerText = "Camera unavailable. Use simulate button below.";
             });
         };
 
         window.closeScanner = function() {
+            // Hide UI immediately for good user experience
             document.getElementById('scanner-modal').classList.add('hidden');
-            if (html5QrcodeScanner && isScanning) {
+            
+            // Shut down hardware in the background
+            if (cameraScanning && html5QrcodeScanner) {
                 html5QrcodeScanner.stop().then(() => {
-                    isScanning = false;
+                    cameraScanning = false;
                     html5QrcodeScanner.clear();
-                }).catch(console.error);
+                }).catch(err => {
+                    console.error("Failed to stop scanner", err);
+                    cameraScanning = false; 
+                });
             }
         };
 
         function onScanSuccess(decodedText, decodedResult) {
+            closeScanner(); // Safely shut down camera first
+            
             if (decodedText.trim() === activeScanState.expectedQr) {
                 appState.data[activeScanState.keyId] = true;
                 
                 // Record exact scan timestamp
                 const now = new Date();
                 appState.data[activeScanState.keyId + '_time'] = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
-                closeScanner(); // FIX: Close scanner immediately on success
                 
                 renderUIButtonsOnly(); 
                 triggerSave(); 
@@ -968,12 +978,7 @@
                 document.getElementById('alert-message').innerText = `Scanned '${decodedText}'. Expected '${activeScanState.expectedQr}'.`;
                 errToast.classList.remove('hidden');
                 setTimeout(() => errToast.classList.add('hidden'), 4000);
-                closeScanner();
             }
-        }
-
-        function onScanFailure(error) {
-            // continuously fails while looking for QR, ignore
         }
 
         window.simulateSuccessfulScan = function() {
