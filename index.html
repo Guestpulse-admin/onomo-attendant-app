@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -188,8 +188,28 @@
 
         <!-- Defect Reporting -->
         <section class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mt-6">
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Outstanding tasks / defects</label>
-            <textarea id="outstanding-tasks" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="3" oninput="triggerSave()" placeholder="Describe any issues, leaks, or damage..."></textarea>
+            <h3 class="font-bold text-lg text-onomo-black mb-3 flex items-center gap-2 uppercase">
+                <i class="fa-solid fa-triangle-exclamation text-red-500"></i> Defect Reporting
+            </h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Issue Category</label>
+                    <select id="defect-category" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm bg-white" onchange="triggerSave()">
+                        <option value="">-- Select Category --</option>
+                        <option value="Plumbing">Plumbing (Leaks, Toilets)</option>
+                        <option value="Electrical">Electrical (Lights, Sockets)</option>
+                        <option value="Furniture">Furniture & Fixtures</option>
+                        <option value="General">General / Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
+                    <textarea id="outstanding-tasks" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="3" oninput="triggerSave()" placeholder="Describe the specific location and issue..."></textarea>
+                </div>
+                <button onclick="sendWhatsAppMaintenance()" class="w-full bg-green-500 text-white font-bold py-2.5 px-4 rounded-lg shadow hover:bg-green-600 transition flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Alert Maintenance on WhatsApp
+                </button>
+            </div>
             
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Attendant Signature (End of Shift)</label>
@@ -602,8 +622,10 @@
                                 <span class="text-xs font-bold text-gray-700">Staff Toilets</span>
                                 ${getScanBtnHTML(`scan_ts_${safeTimeId}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
                             </div>
-                            <div class="mt-2">
-                                <input type="text" id="initials_${safeTimeId}" placeholder="Attendant Initials" class="data-input w-full p-2 text-xs font-bold text-center border border-gray-300 rounded focus:border-onomo-yellow outline-none uppercase bg-white" oninput="triggerSave()">
+                            <div class="mt-2 grid grid-cols-3 gap-2">
+                                <input type="number" id="tp_${safeTimeId}" placeholder="TP Rolls" class="data-input w-full p-2 text-xs border border-gray-300 rounded focus:border-onomo-yellow outline-none bg-white text-center" oninput="triggerSave()">
+                                <input type="number" id="soap_${safeTimeId}" placeholder="Soap" class="data-input w-full p-2 text-xs border border-gray-300 rounded focus:border-onomo-yellow outline-none bg-white text-center" oninput="triggerSave()">
+                                <input type="text" id="initials_${safeTimeId}" placeholder="Initials" class="data-input w-full p-2 text-xs font-bold text-center border border-gray-300 rounded focus:border-onomo-yellow outline-none uppercase bg-white" oninput="triggerSave()">
                             </div>
                         </div>
                     </div>
@@ -650,10 +672,12 @@
 
         function getScanBtnHTML(dataKey, expectedQr, label) {
             const isScanned = !!appState.data[dataKey];
+            const scanTime = appState.data[dataKey + '_time'] ? ` (${appState.data[dataKey + '_time']})` : '';
+            
             if (isScanned) {
                 return `
-                <button class="bg-green-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center gap-1 shadow-sm flex-shrink-0 cursor-default">
-                    <i class="fa-solid fa-check"></i> Done
+                <button class="bg-green-500 text-white font-bold py-1.5 px-3 rounded-lg text-[10px] flex items-center gap-1 shadow-sm flex-shrink-0 cursor-default">
+                    <i class="fa-solid fa-check"></i> Done${scanTime}
                 </button>`;
             } else {
                 const safeQr = expectedQr.replace(/'/g, "\\'");
@@ -676,19 +700,6 @@
             
             renderUIButtonsOnly();
             
-            const isSupUnlocked = !!appState.data['sup_unlocked'];
-            if (isSupUnlocked) {
-                document.getElementById('supervisor-locked').classList.add('hidden');
-                document.getElementById('supervisor-unlocked').classList.remove('hidden');
-                document.getElementById('supervisor-section').classList.replace('bg-gray-800', 'bg-white');
-                document.getElementById('supervisor-section').querySelector('h2').classList.replace('text-white', 'text-onomo-black');
-            } else {
-                document.getElementById('supervisor-locked').classList.remove('hidden');
-                document.getElementById('supervisor-unlocked').classList.add('hidden');
-                document.getElementById('supervisor-section').classList.replace('bg-white', 'bg-gray-800');
-                document.getElementById('supervisor-section').querySelector('h2').classList.replace('text-onomo-black', 'text-white');
-            }
-
             updateVisualStates();
             updateProgressBar();
         }
@@ -721,6 +732,8 @@
                 const accToi = document.getElementById(`acc-toi-${safeTimeId}`);
                 if (!accToi) return;
                 
+                const tpVal = document.getElementById(`tp_${safeTimeId}`)?.value || '';
+                const soapVal = document.getElementById(`soap_${safeTimeId}`)?.value || '';
                 const initVal = document.getElementById(`initials_${safeTimeId}`)?.value || '';
                 
                 accToi.querySelector('div').innerHTML = `
@@ -736,8 +749,10 @@
                         <span class="text-xs font-bold text-gray-700">Staff Toilets</span>
                         ${getScanBtnHTML(`scan_ts_${safeTimeId}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
                     </div>
-                    <div class="mt-2">
-                        <input type="text" id="initials_${safeTimeId}" placeholder="Attendant Initials" class="data-input w-full p-2 text-xs font-bold text-center border border-gray-300 rounded focus:border-onomo-yellow outline-none uppercase bg-white" oninput="triggerSave()" value="${initVal}">
+                    <div class="mt-2 grid grid-cols-3 gap-2">
+                        <input type="number" id="tp_${safeTimeId}" placeholder="TP Rolls" class="data-input w-full p-2 text-xs border border-gray-300 rounded focus:border-onomo-yellow outline-none bg-white text-center" oninput="triggerSave()" value="${tpVal}">
+                        <input type="number" id="soap_${safeTimeId}" placeholder="Soap" class="data-input w-full p-2 text-xs border border-gray-300 rounded focus:border-onomo-yellow outline-none bg-white text-center" oninput="triggerSave()" value="${soapVal}">
+                        <input type="text" id="initials_${safeTimeId}" placeholder="Initials" class="data-input w-full p-2 text-xs font-bold text-center border border-gray-300 rounded focus:border-onomo-yellow outline-none uppercase bg-white" oninput="triggerSave()" value="${initVal}">
                     </div>
                 `;
             });
@@ -761,6 +776,20 @@
                         ${getScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
                     </div>
                 `;
+            }
+
+            // Immediately toggle Supervisor Lock UI upon re-rendering buttons
+            const isSupUnlocked = !!appState.data['sup_unlocked'];
+            if (isSupUnlocked) {
+                document.getElementById('supervisor-locked').classList.add('hidden');
+                document.getElementById('supervisor-unlocked').classList.remove('hidden');
+                document.getElementById('supervisor-section').classList.replace('bg-gray-800', 'bg-white');
+                document.getElementById('supervisor-section').querySelector('h2').classList.replace('text-white', 'text-onomo-black');
+            } else {
+                document.getElementById('supervisor-locked').classList.remove('hidden');
+                document.getElementById('supervisor-unlocked').classList.add('hidden');
+                document.getElementById('supervisor-section').classList.replace('bg-white', 'bg-gray-800');
+                document.getElementById('supervisor-section').querySelector('h2').classList.replace('text-onomo-black', 'text-white');
             }
         }
 
@@ -911,8 +940,11 @@
 
         function onScanSuccess(decodedText, decodedResult) {
             if (decodedText.trim() === activeScanState.expectedQr) {
-                closeScanner();
                 appState.data[activeScanState.keyId] = true;
+                
+                // Record exact scan timestamp
+                const now = new Date();
+                appState.data[activeScanState.keyId + '_time'] = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 
                 renderUIButtonsOnly(); 
                 triggerSave(); 
@@ -997,7 +1029,12 @@
 
             body += `OUTSTANDING TASKS / DEFECTS:\n`;
             body += `----------------------------------------------\n`;
-            body += `${d['outstanding-tasks'] || 'None reported.'}\n\n`;
+            if (d['outstanding-tasks']) {
+                body += `Category: ${d['defect-category'] || 'Uncategorized'}\n`;
+                body += `Details: ${d['outstanding-tasks']}\n\n`;
+            } else {
+                body += `None reported.\n\n`;
+            }
             
             body += `SECTION A: GENERAL AREAS WORKFLOW\n`;
             body += `----------------------------------------------\n`;
@@ -1005,7 +1042,7 @@
                 const safeTimeId = sanitizeId(block.time);
                 body += `[${block.time}] ${block.title}\n`;
                 block.tasks.forEach(t => {
-                    const m = d[`scan_gen_${safeTimeId}_${t.qr}`] ? 'Scanned' : 'Missed';
+                    const m = d[`scan_gen_${safeTimeId}_${t.qr}`] ? `Scanned @ ${d[`scan_gen_${safeTimeId}_${t.qr}_time`] || 'Unknown'}` : 'Missed';
                     body += `    - ${t.name}: ${m}\n`;
                 });
             });
@@ -1017,8 +1054,10 @@
                 const tl = d[`scan_tl_${safeTimeId}`] ? 'Y' : 'N';
                 const tr = d[`scan_tr_${safeTimeId}`] ? 'Y' : 'N';
                 const ts = d[`scan_ts_${safeTimeId}`] ? 'Y' : 'N';
+                const tp = d[`tp_${safeTimeId}`] || '0';
+                const soap = d[`soap_${safeTimeId}`] || '0';
                 const init = d[`initials_${safeTimeId}`] || '--';
-                body += `[${time}] Lobby: ${tl} | Rest: ${tr} | Staff: ${ts} | Initials: ${init}\n`;
+                body += `[${time}] Lobby: ${tl} | Rest: ${tr} | Staff: ${ts} | TP: ${tp} | Soap: ${soap} | Initials: ${init}\n`;
             });
             
             body += `\nSUPERVISOR VERIFICATION:\n`;
@@ -1042,6 +1081,28 @@
             const subject = `Public Areas Checklist - ONOMO - ${appState.dateString} [${shiftName}]`;
             const mailtoLink = `mailto:rdm@example.com,housekeeper@example.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             window.location.href = mailtoLink;
+        }
+
+        // --- WhatsApp Integration ---
+        window.sendWhatsAppMaintenance = function() {
+            const category = document.getElementById('defect-category').value || 'General Issue';
+            const desc = document.getElementById('outstanding-tasks').value;
+            
+            if (!desc) {
+                const errToast = document.getElementById('alert-toast');
+                document.getElementById('alert-title').innerText = "Missing Description";
+                document.getElementById('alert-message').innerText = "Please describe the issue before sending via WhatsApp.";
+                errToast.classList.remove('hidden');
+                setTimeout(() => errToast.classList.add('hidden'), 3000);
+                return;
+            }
+
+            const roomOrArea = "Public Areas (" + appState.currentShift + " Shift)";
+            const text = `🚨 *MAINTENANCE ALERT* 🚨\n*Location:* ${roomOrArea}\n*Category:* ${category}\n*Issue:* ${desc}\n*Reported By:* ${appState.data['attendant-name'] || 'Attendant'}`;
+            
+            const encodedText = encodeURIComponent(text);
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
+            window.open(whatsappUrl, '_blank');
         }
     </script>
 </body>
