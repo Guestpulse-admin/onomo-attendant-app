@@ -301,7 +301,7 @@
                 </h3>
                 <button onclick="toggleModal('qr-guide-modal')" class="text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
             </div>
-            <p class="text-sm text-gray-600 mb-4">Print QR codes containing exactly these exact text strings for each location:</p>
+            <p class="text-sm text-gray-600 mb-4">Print QR codes containing exactly these text strings for each location:</p>
             
             <ul class="space-y-1 text-xs font-mono bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <!-- General -->
@@ -424,6 +424,7 @@
         
         let saveTimeout = null;
         let html5QrcodeScanner = null;
+        let isScanning = false;
         
         // Active Scan Context
         let activeScanState = { keyId: null, expectedQr: null, label: null };
@@ -920,12 +921,16 @@
                 html5QrcodeScanner = new Html5Qrcode("qr-reader");
             }
             
+            if (isScanning) return; // Prevent double starting
+            
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 { fps: 10, qrbox: { width: 250, height: 250 } },
                 onScanSuccess,
                 onScanFailure
-            ).catch(err => {
+            ).then(() => {
+                isScanning = true;
+            }).catch(err => {
                 console.warn("Camera init failed.", err);
                 document.getElementById('camera-loading-text').innerText = "Camera not detected. Use simulate button below.";
             });
@@ -933,8 +938,11 @@
 
         window.closeScanner = function() {
             document.getElementById('scanner-modal').classList.add('hidden');
-            if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
-                html5QrcodeScanner.stop().catch(console.error);
+            if (html5QrcodeScanner && isScanning) {
+                html5QrcodeScanner.stop().then(() => {
+                    isScanning = false;
+                    html5QrcodeScanner.clear();
+                }).catch(console.error);
             }
         };
 
@@ -945,6 +953,8 @@
                 // Record exact scan timestamp
                 const now = new Date();
                 appState.data[activeScanState.keyId + '_time'] = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                closeScanner(); // FIX: Close scanner immediately on success
                 
                 renderUIButtonsOnly(); 
                 triggerSave(); 
