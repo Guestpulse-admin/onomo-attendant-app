@@ -222,6 +222,11 @@
                 <div class="space-y-3" id="supervisor-checks">
                     <!-- Checks injected via JS -->
                 </div>
+
+                <!-- NEW: Supervisor Scans -->
+                <div id="supervisor-scans" class="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                    <!-- Scans injected via JS -->
+                </div>
                 
                 <div class="mt-4 border-t border-gray-100 pt-4">
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Supervisor Name/Signature</label>
@@ -232,7 +237,6 @@
                     <textarea id="supervisor-comments" class="data-input w-full p-2 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="2" oninput="triggerSave()"></textarea>
                 </div>
 
-                <!-- Moved Generate Report Button -->
                 <button id="btn-generate-report" onclick="generateEmailReport()" class="w-full bg-onomo-yellow text-onomo-black p-4 rounded-xl shadow-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-yellow-400 transition-colors mt-6 opacity-50 cursor-not-allowed" disabled>
                     <i class="fa-solid fa-paper-plane"></i> Generate & Send Report
                 </button>
@@ -303,12 +307,12 @@
         </div>
     </div>
 
-    <!-- Alert Toast (Missed/Errors) -->
+    <!-- Alert Toast (Firebase Errors) -->
     <div id="alert-toast" class="fixed top-24 left-4 right-4 max-w-sm mx-auto bg-red-600 text-white p-4 rounded-xl shadow-2xl hidden z-50 flex items-start gap-3 border border-red-800 transition-opacity">
         <i class="fa-solid fa-circle-exclamation text-2xl mt-0.5 text-red-200"></i>
         <div class="flex-1">
-            <h4 class="font-bold text-sm" id="alert-title">Missed Inspection</h4>
-            <p class="text-xs text-red-100 mt-1" id="alert-message">Previous hourly checks were left incomplete.</p>
+            <h4 class="font-bold text-sm" id="alert-title">Error</h4>
+            <p class="text-xs text-red-100 mt-1" id="alert-message">Something went wrong.</p>
         </div>
         <button onclick="closeToast('alert-toast')" class="ml-auto text-red-200 hover:text-white p-1">&times;</button>
     </div>
@@ -327,16 +331,6 @@
         <i class="fa-solid fa-cloud-arrow-up text-onomo-yellow mr-2"></i> SAVED
     </div>
 
-    <!-- Block Action Modal -->
-    <div id="block-modal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full text-center">
-            <i class="fa-solid fa-hand text-red-500 text-4xl mb-4"></i>
-            <h3 class="font-bold text-lg text-onomo-black mb-2">Report Blocked</h3>
-            <p class="text-sm text-gray-600 mb-6">You cannot generate a report until progress is 100%. Please ensure all <strong>General Areas</strong>, <strong>Hourly Toilets</strong>, and the <strong>Supervisor Unlock</strong> are scanned.</p>
-            <button onclick="toggleModal('block-modal')" class="bg-gray-800 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 transition-colors">Understood</button>
-        </div>
-    </div>
-
     <!-- Firebase SDK & App Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -346,7 +340,7 @@
         // ENVIRONMENT SETUP
         const appId = "onomo-checklist-app";
         
-        // --- YOUR LIVE FIREBASE CONFIGURATION ---
+        // --- LIVE FIREBASE CONFIGURATION ---
         const firebaseConfig = {
           apiKey: "AIzaSyCOuyE3BXTHQ5L1iPMYJCiB7_GR63FucQQ",
           authDomain: "onomo-attendant-app.firebaseapp.com",
@@ -414,7 +408,7 @@
         // Active Scan Context
         let activeScanState = { keyId: null, expectedQr: null, label: null };
 
-        // Helper to sanitize time strings for HTML IDs (removes colons)
+        // Helper to sanitize time strings for HTML IDs
         function sanitizeId(str) {
             return str.replace(/[^a-zA-Z0-9_-]/g, '');
         }
@@ -425,18 +419,14 @@
             document.getElementById('btn-shift-morning').onclick = () => setShift('Morning');
             document.getElementById('btn-shift-late').onclick = () => setShift('Late');
 
-            // Render UI immediately so it doesn't wait for network delays
             renderUI();
-            
             await initAuth();
-            setInterval(updateVisualStates, 60000); // Check missed hours every minute
+            setInterval(updateVisualStates, 60000); 
         };
 
         async function initAuth() {
             try {
-                // Connect to Firebase Anonymous Auth
                 await signInAnonymously(auth);
-                
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         currentUser = user;
@@ -447,16 +437,15 @@
                     }
                 });
             } catch (error) {
-                console.error("Firebase Auth Error:", error);
+                console.warn("Firebase Auth Error:", error);
                 document.getElementById('auth-status').innerText = 'Auth Error';
                 document.getElementById('auth-status').classList.remove('text-gray-300', 'text-green-400');
                 document.getElementById('auth-status').classList.add('text-red-400');
                 
                 const errToast = document.getElementById('alert-toast');
                 document.getElementById('alert-title').innerText = "Authentication Error";
-                document.getElementById('alert-message').innerText = "Please ensure Anonymous Sign-In is enabled in Firebase Console. Error: " + error.code;
+                document.getElementById('alert-message').innerText = "Please ensure Anonymous Sign-In is enabled in Firebase Console. Code: " + error.code;
                 errToast.classList.remove('hidden');
-                setTimeout(() => errToast.classList.add('hidden'), 10000);
             }
         }
 
@@ -489,25 +478,23 @@
                 if (docSnap.exists()) {
                     appState.data = docSnap.data();
                 } else {
-                    appState.data = {}; // Reset for new shift
+                    appState.data = {}; 
                 }
             } catch (error) {
-                console.error("Firebase Database Error:", error);
+                console.warn("Firebase Database Error:", error);
                 document.getElementById('auth-status').innerText = 'DB Error';
                 document.getElementById('auth-status').classList.remove('text-green-400');
                 document.getElementById('auth-status').classList.add('text-red-400');
                 
                 const errToast = document.getElementById('alert-toast');
                 document.getElementById('alert-title').innerText = "Database Error";
-                document.getElementById('alert-message').innerText = "Could not load data. Ensure Firestore Database exists and is in Test Mode. Error: " + error.code;
+                document.getElementById('alert-message').innerText = "Make sure Firestore Database is created in Test Mode. Code: " + error.code;
                 errToast.classList.remove('hidden');
-                setTimeout(() => errToast.classList.add('hidden'), 10000);
             }
             populateUIFromState(); 
         }
 
         window.triggerSave = function() {
-            // Collect all inputs
             document.querySelectorAll('.data-input').forEach(el => {
                 if (el.type === 'checkbox') {
                     appState.data[el.id] = el.checked;
@@ -530,16 +517,7 @@
                 await setDoc(docRef, appState.data, { merge: true });
                 showSaveToast();
             } catch (error) {
-                console.error("Firebase Save Error:", error);
-                document.getElementById('auth-status').innerText = 'Save Error';
-                document.getElementById('auth-status').classList.remove('text-green-400');
-                document.getElementById('auth-status').classList.add('text-red-400');
-                
-                const errToast = document.getElementById('alert-toast');
-                document.getElementById('alert-title').innerText = "Failed to Save Data";
-                document.getElementById('alert-message').innerText = "Could not save to Firebase. Error: " + error.code;
-                errToast.classList.remove('hidden');
-                setTimeout(() => errToast.classList.add('hidden'), 6000);
+                console.warn("Firebase Save Error:", error);
             }
         }
 
@@ -554,9 +532,9 @@
             const dtContainer = document.getElementById('dedicated-task-btn-container');
             if (dtContainer) dtContainer.innerHTML = getScanBtnHTML('scan_dedicated_task', 'QR_DEDICATED_TASK', 'Dedicated Task');
 
-            // Section A: General (Now completely converted to Accordions/Dropdowns)
+            // Section A: General
             shiftBlocks.general.forEach(block => {
-                const safeTimeId = sanitizeId(block.time); // e.g. "0600"
+                const safeTimeId = sanitizeId(block.time); 
                 let scansHtml = '';
                 block.tasks.forEach(t => {
                     const dataKey = `scan_gen_${safeTimeId}_${t.qr}`;
@@ -565,7 +543,7 @@
                         <span class="text-xs font-bold text-gray-700">${t.name}</span>
                         ${getScanBtnHTML(dataKey, t.qr, t.name)}
                     </div>`;
-                    appState.totalRequiredScans++; // Add to total required
+                    appState.totalRequiredScans++; 
                 });
 
                 genHtml += `
@@ -589,14 +567,14 @@
             });
             document.getElementById('section-general').innerHTML = genHtml;
 
-            // Section B: Toilets (Accordions/Dropdowns)
+            // Section B: Toilets
             shiftBlocks.toilets.forEach(time => {
-                const safeTimeId = sanitizeId(time); // e.g. "0600"
+                const safeTimeId = sanitizeId(time);
                 const label = appState.currentShift === 'Morning' 
                     ? `${time}–${String(parseInt(time)+1).padStart(2, '0')}:00` 
                     : `${time}–${String(parseInt(time)+1).padStart(2, '0')}:00`;
                 
-                appState.totalRequiredScans += 3; // Lobby, Rest, Staff
+                appState.totalRequiredScans += 3; 
 
                 toiHtml += `
                 <div id="toi-block-${safeTimeId}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
@@ -644,6 +622,28 @@
                 </div>`;
             });
             supContainer.innerHTML = supHtml;
+
+            // Render Supervisor Physical Scans
+            const supScansContainer = document.getElementById('supervisor-scans');
+            if (supScansContainer) {
+                supScansContainer.innerHTML = `
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2 mt-2"><i class="fa-solid fa-person-walking"></i> Location Verification Scans</h4>
+                    <p class="text-[10px] text-gray-400 mb-2">Supervisor must scan these key areas to verify the floor walk.</p>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Lobby</span>
+                        ${getScanBtnHTML('scan_sup_verify_lobby', 'QR_LOBBY', 'Sup Verify Lobby')}
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Restaurant</span>
+                        ${getScanBtnHTML('scan_sup_verify_rest', 'QR_RESTAURANT', 'Sup Verify Restaurant')}
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Toilets</span>
+                        ${getScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
+                    </div>
+                `;
+                appState.totalRequiredScans += 3;
+            }
             
             populateUIFromState();
         }
@@ -666,7 +666,6 @@
         }
 
         function populateUIFromState() {
-            // Apply all data from appState back into the HTML inputs
             document.querySelectorAll('.data-input').forEach(el => {
                 if (el.type === 'checkbox') {
                     el.checked = !!appState.data[el.id];
@@ -675,7 +674,6 @@
                 }
             });
             
-            // Re-render scan buttons correctly
             renderUIButtonsOnly();
             
             const isSupUnlocked = !!appState.data['sup_unlocked'];
@@ -696,7 +694,6 @@
         }
         
         function renderUIButtonsOnly() {
-            // Updates just the scan buttons to change to "Done" state without collapsing accordions
             const shiftBlocks = SHIFTS[appState.currentShift];
             
             const dtContainer = document.getElementById('dedicated-task-btn-container');
@@ -724,7 +721,6 @@
                 const accToi = document.getElementById(`acc-toi-${safeTimeId}`);
                 if (!accToi) return;
                 
-                // Preserve initials input
                 const initVal = document.getElementById(`initials_${safeTimeId}`)?.value || '';
                 
                 accToi.querySelector('div').innerHTML = `
@@ -745,13 +741,33 @@
                     </div>
                 `;
             });
+
+            // Update Supervisor Scans dynamically
+            const supScansContainer = document.getElementById('supervisor-scans');
+            if (supScansContainer) {
+                supScansContainer.innerHTML = `
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2 mt-2"><i class="fa-solid fa-person-walking"></i> Location Verification Scans</h4>
+                    <p class="text-[10px] text-gray-400 mb-2">Supervisor must scan these key areas to verify the floor walk.</p>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Lobby</span>
+                        ${getScanBtnHTML('scan_sup_verify_lobby', 'QR_LOBBY', 'Sup Verify Lobby')}
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Restaurant</span>
+                        ${getScanBtnHTML('scan_sup_verify_rest', 'QR_RESTAURANT', 'Sup Verify Restaurant')}
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Toilets</span>
+                        ${getScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
+                    </div>
+                `;
+            }
         }
 
         function updateProgressBar() {
             let completedScans = 0;
             const shiftBlocks = SHIFTS[appState.currentShift];
             
-            // General
             shiftBlocks.general.forEach(block => {
                 const safeTimeId = sanitizeId(block.time);
                 block.tasks.forEach(t => {
@@ -759,7 +775,6 @@
                 });
             });
             
-            // Toilets
             shiftBlocks.toilets.forEach(time => {
                 const safeTimeId = sanitizeId(time);
                 if (appState.data[`scan_tl_${safeTimeId}`]) completedScans++;
@@ -767,43 +782,42 @@
                 if (appState.data[`scan_ts_${safeTimeId}`]) completedScans++;
             });
             
-            // Dedicated Task
-        if (appState.data['scan_dedicated_task']) completedScans++;
-
-        // Supervisor
-        if (appState.data['sup_unlocked']) completedScans++;
-        
-        // Ensure no division by zero logic
-        const safeTotal = appState.totalRequiredScans > 0 ? appState.totalRequiredScans : 1;
-        const percentage = Math.min(100, Math.round((completedScans / safeTotal) * 100));
-        appState.currentProgress = percentage;
-        
-        document.getElementById('progress-bar').style.width = `${percentage}%`;
-        document.getElementById('progress-text').innerText = `${percentage}% (${completedScans}/${appState.totalRequiredScans})`;
-        
-        const reportBtn = document.getElementById('btn-generate-report');
-        
-        if(percentage === 100) {
-             document.getElementById('progress-bar').classList.replace('bg-onomo-yellow', 'bg-green-500');
-             if(reportBtn) {
-                 reportBtn.disabled = false;
-                 reportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-             }
-        } else {
-             document.getElementById('progress-bar').classList.replace('bg-green-500', 'bg-onomo-yellow');
-             if(reportBtn) {
-                 reportBtn.disabled = true;
-                 reportBtn.classList.add('opacity-50', 'cursor-not-allowed');
-             }
+            if (appState.data['scan_dedicated_task']) completedScans++;
+            if (appState.data['sup_unlocked']) completedScans++;
+            
+            // Supervisor Verification Scans
+            if (appState.data['scan_sup_verify_lobby']) completedScans++;
+            if (appState.data['scan_sup_verify_rest']) completedScans++;
+            if (appState.data['scan_sup_verify_toilet']) completedScans++;
+            
+            const safeTotal = appState.totalRequiredScans > 0 ? appState.totalRequiredScans : 1;
+            const percentage = Math.min(100, Math.round((completedScans / safeTotal) * 100));
+            appState.currentProgress = percentage;
+            
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            document.getElementById('progress-text').innerText = `${percentage}% (${completedScans}/${appState.totalRequiredScans})`;
+            
+            const reportBtn = document.getElementById('btn-generate-report');
+            
+            if(percentage === 100) {
+                 document.getElementById('progress-bar').classList.replace('bg-onomo-yellow', 'bg-green-500');
+                 if(reportBtn) {
+                     reportBtn.disabled = false;
+                     reportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                 }
+            } else {
+                 document.getElementById('progress-bar').classList.replace('bg-green-500', 'bg-onomo-yellow');
+                 if(reportBtn) {
+                     reportBtn.disabled = true;
+                     reportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                 }
+            }
         }
-    }
 
-    function updateVisualStates() {
+        function updateVisualStates() {
             const currentHour = new Date().getHours();
-            let hasMissedTasks = false;
             const shiftBlocks = SHIFTS[appState.currentShift];
 
-            // General Status Check
             shiftBlocks.general.forEach(block => {
                 const blockHour = parseInt(block.time.split(':')[0], 10);
                 const safeTimeId = sanitizeId(block.time);
@@ -830,12 +844,10 @@
                         blockEl.classList.add('ring-2', 'ring-onomo-yellow', 'shadow-md');
                     } else if (blockHour < currentHour) {
                         blockEl.classList.add('border-red-500', 'border-2');
-                        hasMissedTasks = true;
                     }
                 }
             });
 
-            // Toilets Status Check
             shiftBlocks.toilets.forEach(time => {
                 const blockHour = parseInt(time.split(':')[0], 10);
                 const safeTimeId = sanitizeId(time);
@@ -861,13 +873,9 @@
                         blockEl.classList.add('ring-2', 'ring-onomo-yellow', 'shadow-md');
                     } else if (blockHour < currentHour) {
                         blockEl.classList.add('border-red-500', 'border-2');
-                        hasMissedTasks = true;
                     }
                 }
             });
-
-            // Removed aggressive alert toast for missed inspections here.
-            // It was causing clutter for the general user.
         }
 
         // --- QR Scanner Logic ---
@@ -889,7 +897,7 @@
                 onScanSuccess,
                 onScanFailure
             ).catch(err => {
-                console.warn("Camera init failed, using simulated interface instead.", err);
+                console.warn("Camera init failed.", err);
                 document.getElementById('camera-loading-text').innerText = "Camera not detected. Use simulate button below.";
             });
         };
@@ -906,10 +914,8 @@
                 closeScanner();
                 appState.data[activeScanState.keyId] = true;
                 
-                // Force the UI to re-render the buttons immediately to show "Done"
                 renderUIButtonsOnly(); 
-                
-                triggerSave(); // also calls updateVisualStates and updateProgressBar
+                triggerSave(); 
                 
                 const sToast = document.getElementById('success-toast');
                 sToast.classList.remove('hidden');
@@ -939,7 +945,6 @@
             const el = document.getElementById(id);
             if (!el) return;
             
-            // Build the icon ID matching our sanitized convention
             const iconId = id.replace('acc-', 'icon-');
             const icon = document.getElementById(iconId);
             
@@ -973,10 +978,7 @@
 
         // --- Email Reporting ---
         window.generateEmailReport = function() {
-            if (appState.currentProgress < 100) {
-                toggleModal('block-modal');
-                return;
-            }
+            if (appState.currentProgress < 100) return;
 
             const d = appState.data;
             const shiftName = appState.currentShift;
@@ -1021,7 +1023,13 @@
             
             body += `\nSUPERVISOR VERIFICATION:\n`;
             body += `----------------------------------------------\n`;
-            body += `Supervisor Unlock QR: ${d['sup_unlocked'] ? 'Scanned & Verified' : 'MISSING'}\n`;
+            body += `Supervisor Unlock QR: ${d['sup_unlocked'] ? 'Scanned & Verified' : 'MISSING'}\n\n`;
+            
+            body += `Supervisor Area Scans:\n`;
+            body += `[${d['scan_sup_verify_lobby'] ? 'X' : ' '}] Lobby Verified\n`;
+            body += `[${d['scan_sup_verify_rest'] ? 'X' : ' '}] Restaurant Verified\n`;
+            body += `[${d['scan_sup_verify_toilet'] ? 'X' : ' '}] Toilets Verified\n\n`;
+
             SUPERVISOR_TASKS.forEach((task, idx) => {
                 body += `[${!!d[`sup_check_${idx}`] ? 'X' : ' '}] ${task}\n`;
             });
