@@ -156,10 +156,10 @@
             <h3 class="font-bold text-lg text-onomo-black mb-1 flex items-center gap-2 uppercase">
                 <i class="fa-solid fa-star text-onomo-yellow"></i> Dedicated Task
             </h3>
-            <p class="text-xs text-gray-500 mb-3">Supervisor to assign a specific task for the shift.</p>
+            <p class="text-xs text-gray-500 mb-3">Supervisor to assign a specific task for the shift. Photo required.</p>
             <input type="text" id="dedicated-task-desc" class="data-input w-full p-2.5 mb-3 border border-gray-300 rounded-lg focus:border-onomo-yellow focus:ring-1 focus:ring-onomo-yellow outline-none text-sm transition-colors" placeholder="e.g., Deep clean lobby chandeliers" oninput="triggerSave()">
             <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
-                <span class="text-xs font-semibold text-gray-700">Mark as Completed</span>
+                <span class="text-xs font-semibold text-gray-700">Photo Proof</span>
                 <span id="dedicated-task-btn-container"></span>
             </div>
         </section>
@@ -268,6 +268,15 @@
 
     <!-- Modals & Toasts -->
 
+    <!-- Hidden Camera Input -->
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoUpload(event)">
+
+    <!-- Photo Viewer Modal -->
+    <div id="photo-viewer-modal" class="fixed inset-0 bg-black/90 z-[110] hidden flex flex-col items-center justify-center p-4">
+        <button onclick="closePhotoViewer()" class="absolute top-4 right-4 text-white text-3xl font-bold">&times;</button>
+        <img id="photo-viewer-img" src="" class="max-w-full max-h-[80vh] rounded-lg object-contain border-2 border-white shadow-2xl">
+    </div>
+
     <!-- Scanner Modal -->
     <div id="scanner-modal" class="fixed inset-0 bg-black z-[100] hidden flex flex-col">
         <div class="p-4 bg-gray-900 text-white flex justify-between items-center shadow-lg">
@@ -309,7 +318,9 @@
                 <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_PARKING</span> <span class="text-gray-500">Parking Areas</span></li>
                 <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_LOBBY</span> <span class="text-gray-500">Reception Lobby</span></li>
                 <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_RESTAURANT</span> <span class="text-gray-500">Restaurant & Outside</span></li>
-                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_CORRIDORS</span> <span class="text-gray-500">Corridors / Lifts</span></li>
+                <li class="flex flex-col py-1.5 border-b border-gray-200">
+                    <div class="flex justify-between"><span class="font-bold text-gray-800">QR_CORRIDORS_F1 to F5</span> <span class="text-gray-500">Corridors (Flr 1-5)</span></div>
+                </li>
                 <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_BACK_OFFICE</span> <span class="text-gray-500">Back Offices</span></li>
                 <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_CANTEEN</span> <span class="text-gray-500">Staff Canteen</span></li>
                 <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_HANDOVER</span> <span class="text-gray-500">End of Shift Handover</span></li>
@@ -382,7 +393,7 @@
                     { time: '06:00', label: '06:00–07:00', title: 'Front Entrance, Curbside, Parking', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance'}, {qr: 'QR_PARKING', name: 'Parking'}] },
                     { time: '07:00', label: '07:00–08:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby'}] },
                     { time: '08:00', label: '08:00–09:00', title: 'Restaurant & Outside', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant'}] },
-                    { time: '09:00', label: '09:00–10:00', title: 'Corridors & Lift Lobbies', tasks: [{qr: 'QR_CORRIDORS', name: 'Corridors'}] },
+                    { time: '09:00', label: '09:00–10:00', title: 'Corridors & Lift Lobbies', tasks: [{qr: 'QR_CORRIDORS_F1', name: 'Floor 1'}, {qr: 'QR_CORRIDORS_F2', name: 'Floor 2'}, {qr: 'QR_CORRIDORS_F3', name: 'Floor 3'}, {qr: 'QR_CORRIDORS_F4', name: 'Floor 4'}, {qr: 'QR_CORRIDORS_F5', name: 'Floor 5'}] },
                     { time: '10:00', label: '10:00–11:00', title: 'Back Offices & Canteen', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office'}, {qr: 'QR_CANTEEN', name: 'Canteen'}] },
                     { time: '11:00', label: '11:00–12:00', title: 'Restaurant Detail', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant'}] },
                     { time: '12:00', label: '12:00–13:00', title: 'Lobby & Entrances', tasks: [{qr: 'QR_LOBBY', name: 'Lobby'}, {qr: 'QR_ENTRANCE', name: 'Entrance'}] },
@@ -395,7 +406,7 @@
                     { time: '14:00', label: '14:00–15:00', title: 'Shift Takeover, Entrances, Parking', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance'}, {qr: 'QR_PARKING', name: 'Parking'}] },
                     { time: '15:00', label: '15:00–16:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby'}] },
                     { time: '16:00', label: '16:00–17:00', title: 'Restaurant', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant'}] },
-                    { time: '17:00', label: '17:00–18:00', title: 'Corridors & Lift Lobbies', tasks: [{qr: 'QR_CORRIDORS', name: 'Corridors'}] },
+                    { time: '17:00', label: '17:00–18:00', title: 'Corridors & Lift Lobbies', tasks: [{qr: 'QR_CORRIDORS_F1', name: 'Floor 1'}, {qr: 'QR_CORRIDORS_F2', name: 'Floor 2'}, {qr: 'QR_CORRIDORS_F3', name: 'Floor 3'}, {qr: 'QR_CORRIDORS_F4', name: 'Floor 4'}, {qr: 'QR_CORRIDORS_F5', name: 'Floor 5'}] },
                     { time: '18:00', label: '18:00–19:00', title: 'Back Offices & Canteen', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office'}, {qr: 'QR_CANTEEN', name: 'Canteen'}] },
                     { time: '19:00', label: '19:00–20:00', title: 'Restaurant Detail', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant'}] },
                     { time: '20:00', label: '20:00–21:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby'}] },
@@ -463,11 +474,6 @@
                 document.getElementById('auth-status').innerText = 'Auth Error';
                 document.getElementById('auth-status').classList.remove('text-gray-300', 'text-green-400');
                 document.getElementById('auth-status').classList.add('text-red-400');
-                
-                const errToast = document.getElementById('alert-toast');
-                document.getElementById('alert-title').innerText = "Authentication Error";
-                document.getElementById('alert-message').innerText = "Please ensure Anonymous Sign-In is enabled in Firebase Console. Code: " + error.code;
-                errToast.classList.remove('hidden');
             }
         }
 
@@ -493,7 +499,6 @@
 
         async function loadData() {
             if (!currentUser) return;
-            
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'onomo_checklists_v2', getDocId());
             try {
                 const docSnap = await getDoc(docRef);
@@ -504,13 +509,9 @@
                 }
             } catch (error) {
                 console.warn("Firebase Database Error:", error);
-                document.getElementById('auth-status').innerText = 'DB Error';
-                document.getElementById('auth-status').classList.remove('text-green-400');
-                document.getElementById('auth-status').classList.add('text-red-400');
-                
                 const errToast = document.getElementById('alert-toast');
-                document.getElementById('alert-title').innerText = "Database Error";
-                document.getElementById('alert-message').innerText = "Make sure Firestore Database is created in Test Mode. Code: " + error.code;
+                document.getElementById('alert-title').innerText = "Database Read Error";
+                document.getElementById('alert-message').innerText = error.message;
                 errToast.classList.remove('hidden');
             }
             populateUIFromState(); 
@@ -543,29 +544,74 @@
             }
         }
 
+        // --- Render UI Helpers ---
+        function getActionBtnsHTML(baseKey, expectedQr, label) {
+            const scanKey = 'scan_' + baseKey;
+            const photoKey = 'photo_' + baseKey;
+
+            const isScanned = !!appState.data[scanKey];
+            const hasPhoto = !!appState.data[photoKey];
+
+            let photoHtml = '';
+            if (hasPhoto) {
+                photoHtml = `<img src="${appState.data[photoKey]}" class="w-7 h-7 rounded bg-gray-100 border border-green-500 object-cover cursor-pointer" onclick="viewPhoto('${photoKey}')">`;
+            } else {
+                photoHtml = `<button onclick="triggerCamera('${photoKey}')" class="bg-blue-500 text-white font-bold w-7 h-7 flex justify-center items-center rounded text-xs shadow hover:bg-blue-600 transition flex-shrink-0"><i class="fa-solid fa-camera"></i></button>`;
+            }
+
+            let scanHtml = '';
+            if (isScanned) {
+                scanHtml = `<button class="bg-green-500 text-white w-7 h-7 flex justify-center items-center rounded text-xs shadow-sm cursor-default flex-shrink-0"><i class="fa-solid fa-check"></i></button>`;
+            } else {
+                const safeQr = expectedQr.replace(/'/g, "\\'");
+                const safeLabel = label.replace(/'/g, "\\'");
+                scanHtml = `<button onclick="openScanner('${scanKey}', '${safeQr}', '${safeLabel}')" class="bg-gray-800 text-white font-bold w-7 h-7 flex justify-center items-center rounded text-xs shadow hover:bg-gray-700 transition flex-shrink-0"><i class="fa-solid fa-qrcode"></i></button>`;
+            }
+
+            return `<div class="flex items-center gap-2">${photoHtml}${scanHtml}</div>`;
+        }
+
+        function getSinglePhotoBtnHTML(photoKey) {
+            const hasPhoto = !!appState.data[photoKey];
+            if (hasPhoto) {
+                return `<img src="${appState.data[photoKey]}" class="w-8 h-8 rounded border border-green-500 object-cover cursor-pointer" onclick="viewPhoto('${photoKey}')">`;
+            } else {
+                return `<button onclick="triggerCamera('${photoKey}')" class="bg-blue-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow hover:bg-blue-600 transition flex-shrink-0 flex items-center gap-1"><i class="fa-solid fa-camera"></i> Photo</button>`;
+            }
+        }
+
+        function getSingleScanBtnHTML(dataKey, expectedQr, label) {
+            const isScanned = !!appState.data[dataKey];
+            if (isScanned) {
+                return `<button class="bg-green-500 text-white font-bold py-1.5 px-3 rounded-lg text-[10px] flex items-center gap-1 shadow-sm flex-shrink-0 cursor-default"><i class="fa-solid fa-check"></i> Done</button>`;
+            } else {
+                const safeQr = expectedQr.replace(/'/g, "\\'");
+                const safeLabel = label.replace(/'/g, "\\'");
+                return `<button onclick="openScanner('${dataKey}', '${safeQr}', '${safeLabel}')" class="bg-gray-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center gap-1 shadow hover:bg-gray-700 transition flex-shrink-0"><i class="fa-solid fa-qrcode"></i> Scan</button>`;
+            }
+        }
+
         // --- Render UI ---
         function renderUI() {
             const shiftBlocks = SHIFTS[appState.currentShift];
             let genHtml = '';
             let toiHtml = '';
-            appState.totalRequiredScans = 2; // +1 for Supervisor unlock, +1 for Dedicated Task
-
+            
             // Render Dedicated Task Button
             const dtContainer = document.getElementById('dedicated-task-btn-container');
-            if (dtContainer) dtContainer.innerHTML = getScanBtnHTML('scan_dedicated_task', 'QR_DEDICATED_TASK', 'Dedicated Task');
+            if (dtContainer) dtContainer.innerHTML = getSinglePhotoBtnHTML('photo_dedicated_task');
 
             // Section A: General
             shiftBlocks.general.forEach(block => {
                 const safeTimeId = sanitizeId(block.time); 
                 let scansHtml = '';
                 block.tasks.forEach(t => {
-                    const dataKey = `scan_gen_${safeTimeId}_${t.qr}`;
+                    const baseKey = `gen_${safeTimeId}_${t.qr}`;
                     scansHtml += `
                     <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
-                        <span class="text-xs font-bold text-gray-700">${t.name}</span>
-                        ${getScanBtnHTML(dataKey, t.qr, t.name)}
+                        <span class="text-xs font-bold text-gray-700 w-2/3">${t.name}</span>
+                        ${getActionBtnsHTML(baseKey, t.qr, t.name)}
                     </div>`;
-                    appState.totalRequiredScans++; 
                 });
 
                 genHtml += `
@@ -576,7 +622,6 @@
                             <span class="font-bold text-gray-800 text-sm">${block.title}</span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span id="gen-status-${safeTimeId}" class="text-[10px] text-gray-500 font-medium whitespace-nowrap">Pending</span>
                             <i class="fa-solid fa-chevron-down text-gray-400 transition-transform" id="icon-gen-${safeTimeId}"></i>
                         </div>
                     </button>
@@ -595,8 +640,6 @@
                 const label = appState.currentShift === 'Morning' 
                     ? `${time}–${String(parseInt(time)+1).padStart(2, '0')}:00` 
                     : `${time}–${String(parseInt(time)+1).padStart(2, '0')}:00`;
-                
-                appState.totalRequiredScans += 3; 
 
                 toiHtml += `
                 <div id="toi-block-${safeTimeId}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
@@ -606,23 +649,22 @@
                             <span class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-restroom text-gray-400 mr-1"></i> Toilet Checks</span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span id="toi-status-${safeTimeId}" class="text-[10px] text-gray-500 font-medium whitespace-nowrap">Pending</span>
                             <i class="fa-solid fa-chevron-down text-gray-400 transition-transform" id="icon-toi-${safeTimeId}"></i>
                         </div>
                     </button>
                     <div id="acc-toi-${safeTimeId}" class="accordion-content bg-white border-t border-yellow-100">
                         <div class="p-3 space-y-2 bg-yellow-50/20">
                             <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
-                                <span class="text-xs font-bold text-gray-700">Lobby Toilets</span>
-                                ${getScanBtnHTML(`scan_tl_${safeTimeId}`, 'QR_TOILET_LOBBY', 'Lobby Toilet')}
+                                <span class="text-xs font-bold text-gray-700 w-2/3">Lobby Toilets</span>
+                                ${getActionBtnsHTML(`tl_${safeTimeId}`, 'QR_TOILET_LOBBY', 'Lobby Toilet')}
                             </div>
                             <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
-                                <span class="text-xs font-bold text-gray-700">Restaurant Toilets</span>
-                                ${getScanBtnHTML(`scan_tr_${safeTimeId}`, 'QR_TOILET_REST', 'Restaurant Toilet')}
+                                <span class="text-xs font-bold text-gray-700 w-2/3">Restaurant Toilets</span>
+                                ${getActionBtnsHTML(`tr_${safeTimeId}`, 'QR_TOILET_REST', 'Restaurant Toilet')}
                             </div>
                             <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
-                                <span class="text-xs font-bold text-gray-700">Staff Toilets</span>
-                                ${getScanBtnHTML(`scan_ts_${safeTimeId}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
+                                <span class="text-xs font-bold text-gray-700 w-2/3">Staff Toilets</span>
+                                ${getActionBtnsHTML(`ts_${safeTimeId}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
                             </div>
                             <div class="mt-2 grid grid-cols-3 gap-2">
                                 <input type="number" id="tp_${safeTimeId}" placeholder="TP Rolls" class="data-input w-full p-2 text-xs border border-gray-300 rounded focus:border-onomo-yellow outline-none bg-white text-center" oninput="triggerSave()">
@@ -655,40 +697,20 @@
                     <p class="text-[10px] text-gray-400 mb-2">Supervisor must scan these key areas to verify the floor walk.</p>
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
                         <span class="text-xs font-bold text-gray-700">Verify Lobby</span>
-                        ${getScanBtnHTML('scan_sup_verify_lobby', 'QR_LOBBY', 'Sup Verify Lobby')}
+                        ${getSingleScanBtnHTML('scan_sup_verify_lobby', 'QR_LOBBY', 'Sup Verify Lobby')}
                     </div>
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
                         <span class="text-xs font-bold text-gray-700">Verify Restaurant</span>
-                        ${getScanBtnHTML('scan_sup_verify_rest', 'QR_RESTAURANT', 'Sup Verify Restaurant')}
+                        ${getSingleScanBtnHTML('scan_sup_verify_rest', 'QR_RESTAURANT', 'Sup Verify Restaurant')}
                     </div>
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
                         <span class="text-xs font-bold text-gray-700">Verify Toilets</span>
-                        ${getScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
+                        ${getSingleScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
                     </div>
                 `;
-                appState.totalRequiredScans += 3;
             }
             
             populateUIFromState();
-        }
-
-        function getScanBtnHTML(dataKey, expectedQr, label) {
-            const isScanned = !!appState.data[dataKey];
-            const scanTime = appState.data[dataKey + '_time'] ? ` (${appState.data[dataKey + '_time']})` : '';
-            
-            if (isScanned) {
-                return `
-                <button class="bg-green-500 text-white font-bold py-1.5 px-3 rounded-lg text-[10px] flex items-center gap-1 shadow-sm flex-shrink-0 cursor-default">
-                    <i class="fa-solid fa-check"></i> Done${scanTime}
-                </button>`;
-            } else {
-                const safeQr = expectedQr.replace(/'/g, "\\'");
-                const safeLabel = label.replace(/'/g, "\\'");
-                return `
-                <button onclick="openScanner('${dataKey}', '${safeQr}', '${safeLabel}')" class="bg-gray-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center gap-1 shadow hover:bg-gray-700 transition flex-shrink-0">
-                    <i class="fa-solid fa-qrcode"></i> Scan
-                </button>`;
-            }
         }
 
         function populateUIFromState() {
@@ -701,7 +723,6 @@
             });
             
             renderUIButtonsOnly();
-            
             updateVisualStates();
             updateProgressBar();
         }
@@ -710,7 +731,7 @@
             const shiftBlocks = SHIFTS[appState.currentShift];
             
             const dtContainer = document.getElementById('dedicated-task-btn-container');
-            if (dtContainer) dtContainer.innerHTML = getScanBtnHTML('scan_dedicated_task', 'QR_DEDICATED_TASK', 'Dedicated Task');
+            if (dtContainer) dtContainer.innerHTML = getSinglePhotoBtnHTML('photo_dedicated_task');
             
             shiftBlocks.general.forEach(block => {
                 const safeTimeId = sanitizeId(block.time);
@@ -719,11 +740,11 @@
                 
                 let scansHtml = '';
                 block.tasks.forEach(t => {
-                    const dataKey = `scan_gen_${safeTimeId}_${t.qr}`;
+                    const baseKey = `gen_${safeTimeId}_${t.qr}`;
                     scansHtml += `
                     <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
-                        <span class="text-xs font-bold text-gray-700">${t.name}</span>
-                        ${getScanBtnHTML(dataKey, t.qr, t.name)}
+                        <span class="text-xs font-bold text-gray-700 w-2/3">${t.name}</span>
+                        ${getActionBtnsHTML(baseKey, t.qr, t.name)}
                     </div>`;
                 });
                 accGen.querySelector('div').innerHTML = scansHtml;
@@ -740,16 +761,16 @@
                 
                 accToi.querySelector('div').innerHTML = `
                     <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
-                        <span class="text-xs font-bold text-gray-700">Lobby Toilets</span>
-                        ${getScanBtnHTML(`scan_tl_${safeTimeId}`, 'QR_TOILET_LOBBY', 'Lobby Toilet')}
+                        <span class="text-xs font-bold text-gray-700 w-2/3">Lobby Toilets</span>
+                        ${getActionBtnsHTML(`tl_${safeTimeId}`, 'QR_TOILET_LOBBY', 'Lobby Toilet')}
                     </div>
                     <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
-                        <span class="text-xs font-bold text-gray-700">Restaurant Toilets</span>
-                        ${getScanBtnHTML(`scan_tr_${safeTimeId}`, 'QR_TOILET_REST', 'Restaurant Toilet')}
+                        <span class="text-xs font-bold text-gray-700 w-2/3">Restaurant Toilets</span>
+                        ${getActionBtnsHTML(`tr_${safeTimeId}`, 'QR_TOILET_REST', 'Restaurant Toilet')}
                     </div>
                     <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
-                        <span class="text-xs font-bold text-gray-700">Staff Toilets</span>
-                        ${getScanBtnHTML(`scan_ts_${safeTimeId}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
+                        <span class="text-xs font-bold text-gray-700 w-2/3">Staff Toilets</span>
+                        ${getActionBtnsHTML(`ts_${safeTimeId}`, 'QR_TOILET_STAFF', 'Staff Toilet')}
                     </div>
                     <div class="mt-2 grid grid-cols-3 gap-2">
                         <input type="number" id="tp_${safeTimeId}" placeholder="TP Rolls" class="data-input w-full p-2 text-xs border border-gray-300 rounded focus:border-onomo-yellow outline-none bg-white text-center" oninput="triggerSave()" value="${tpVal}">
@@ -767,20 +788,20 @@
                     <p class="text-[10px] text-gray-400 mb-2">Supervisor must scan these key areas to verify the floor walk.</p>
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
                         <span class="text-xs font-bold text-gray-700">Verify Lobby</span>
-                        ${getScanBtnHTML('scan_sup_verify_lobby', 'QR_LOBBY', 'Sup Verify Lobby')}
+                        ${getSingleScanBtnHTML('scan_sup_verify_lobby', 'QR_LOBBY', 'Sup Verify Lobby')}
                     </div>
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
                         <span class="text-xs font-bold text-gray-700">Verify Restaurant</span>
-                        ${getScanBtnHTML('scan_sup_verify_rest', 'QR_RESTAURANT', 'Sup Verify Restaurant')}
+                        ${getSingleScanBtnHTML('scan_sup_verify_rest', 'QR_RESTAURANT', 'Sup Verify Restaurant')}
                     </div>
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
                         <span class="text-xs font-bold text-gray-700">Verify Toilets</span>
-                        ${getScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
+                        ${getSingleScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
                     </div>
                 `;
             }
 
-            // Immediately toggle Supervisor Lock UI upon re-rendering buttons
+            // Immediately toggle Supervisor Lock UI
             const isSupUnlocked = !!appState.data['sup_unlocked'];
             if (isSupUnlocked) {
                 document.getElementById('supervisor-locked').classList.add('hidden');
@@ -797,26 +818,36 @@
 
         function updateProgressBar() {
             let completedScans = 0;
+            appState.totalRequiredScans = 0;
+
             const shiftBlocks = SHIFTS[appState.currentShift];
             
             shiftBlocks.general.forEach(block => {
                 const safeTimeId = sanitizeId(block.time);
                 block.tasks.forEach(t => {
+                    appState.totalRequiredScans += 2; // scan + photo
                     if (appState.data[`scan_gen_${safeTimeId}_${t.qr}`]) completedScans++;
+                    if (appState.data[`photo_gen_${safeTimeId}_${t.qr}`]) completedScans++;
                 });
             });
             
             shiftBlocks.toilets.forEach(time => {
                 const safeTimeId = sanitizeId(time);
+                appState.totalRequiredScans += 6; // 3 scans + 3 photos
                 if (appState.data[`scan_tl_${safeTimeId}`]) completedScans++;
+                if (appState.data[`photo_tl_${safeTimeId}`]) completedScans++;
                 if (appState.data[`scan_tr_${safeTimeId}`]) completedScans++;
+                if (appState.data[`photo_tr_${safeTimeId}`]) completedScans++;
                 if (appState.data[`scan_ts_${safeTimeId}`]) completedScans++;
+                if (appState.data[`photo_ts_${safeTimeId}`]) completedScans++;
             });
             
-            if (appState.data['scan_dedicated_task']) completedScans++;
-            if (appState.data['sup_unlocked']) completedScans++;
+            // Dedicated & Supervisor
+            appState.totalRequiredScans += 1; // Dedicated photo
+            if (appState.data['photo_dedicated_task']) completedScans++;
             
-            // Supervisor Verification Scans
+            appState.totalRequiredScans += 4; // 1 Unlock + 3 verification scans
+            if (appState.data['sup_unlocked']) completedScans++;
             if (appState.data['scan_sup_verify_lobby']) completedScans++;
             if (appState.data['scan_sup_verify_rest']) completedScans++;
             if (appState.data['scan_sup_verify_toilet']) completedScans++;
@@ -829,7 +860,6 @@
             document.getElementById('progress-text').innerText = `${percentage}% (${completedScans}/${appState.totalRequiredScans})`;
             
             const reportBtn = document.getElementById('btn-generate-report');
-            
             if(percentage === 100) {
                  document.getElementById('progress-bar').classList.replace('bg-onomo-yellow', 'bg-green-500');
                  if(reportBtn) {
@@ -853,24 +883,20 @@
                 const blockHour = parseInt(block.time.split(':')[0], 10);
                 const safeTimeId = sanitizeId(block.time);
                 const blockEl = document.getElementById(`gen-block-${safeTimeId}`);
-                const statusText = document.getElementById(`gen-status-${safeTimeId}`);
                 if (!blockEl) return;
 
                 blockEl.classList.remove('border-red-500', 'border-2', 'ring-2', 'ring-onomo-yellow', 'shadow-md', 'border-green-500');
                 
                 let allScanned = true;
                 block.tasks.forEach(t => {
-                    if (!appState.data[`scan_gen_${safeTimeId}_${t.qr}`]) allScanned = false;
+                    if (!appState.data[`scan_gen_${safeTimeId}_${t.qr}`] || !appState.data[`photo_gen_${safeTimeId}_${t.qr}`]) {
+                        allScanned = false;
+                    }
                 });
 
                 if (allScanned) {
-                    statusText.innerText = "Done";
-                    statusText.classList.replace('text-gray-500', 'text-green-600');
                     blockEl.classList.add('border-green-500', 'border-2');
                 } else {
-                    statusText.innerText = "Pending";
-                    statusText.classList.replace('text-green-600', 'text-gray-500');
-                    
                     if (blockHour === currentHour) {
                         blockEl.classList.add('ring-2', 'ring-onomo-yellow', 'shadow-md');
                     } else if (blockHour < currentHour) {
@@ -883,23 +909,19 @@
                 const blockHour = parseInt(time.split(':')[0], 10);
                 const safeTimeId = sanitizeId(time);
                 const blockEl = document.getElementById(`toi-block-${safeTimeId}`);
-                const statusText = document.getElementById(`toi-status-${safeTimeId}`);
                 if (!blockEl) return;
 
                 blockEl.classList.remove('border-red-500', 'border-2', 'ring-2', 'ring-onomo-yellow', 'shadow-md', 'border-green-500');
                 
-                const isTl = !!appState.data[`scan_tl_${safeTimeId}`];
-                const isTr = !!appState.data[`scan_tr_${safeTimeId}`];
-                const isTs = !!appState.data[`scan_ts_${safeTimeId}`];
+                const allDone = (
+                    appState.data[`scan_tl_${safeTimeId}`] && appState.data[`photo_tl_${safeTimeId}`] &&
+                    appState.data[`scan_tr_${safeTimeId}`] && appState.data[`photo_tr_${safeTimeId}`] &&
+                    appState.data[`scan_ts_${safeTimeId}`] && appState.data[`photo_ts_${safeTimeId}`]
+                );
                 
-                if (isTl && isTr && isTs) {
-                    statusText.innerText = "Done";
-                    statusText.classList.replace('text-gray-500', 'text-green-600');
+                if (allDone) {
                     blockEl.classList.add('border-green-500', 'border-2');
                 } else {
-                    statusText.innerText = "Pending";
-                    statusText.classList.replace('text-green-600', 'text-gray-500');
-                    
                     if (blockHour === currentHour) {
                         blockEl.classList.add('ring-2', 'ring-onomo-yellow', 'shadow-md');
                     } else if (blockHour < currentHour) {
@@ -908,6 +930,55 @@
                 }
             });
         }
+
+        // --- Photo & Camera Upload Logic ---
+        
+        window.triggerCamera = function(dataKeyId) {
+            activeScanState = { keyId: dataKeyId }; 
+            document.getElementById('camera-input').click();
+        };
+
+        window.handlePhotoUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 300; // Compress heavily to save db space
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% quality JPEG
+                    appState.data[activeScanState.keyId] = dataUrl;
+                    
+                    renderUIButtonsOnly();
+                    triggerSave();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+        
+        window.viewPhoto = function(dataKeyId) {
+            const photoData = appState.data[dataKeyId];
+            if (photoData) {
+                document.getElementById('photo-viewer-img').src = photoData;
+                document.getElementById('photo-viewer-modal').classList.remove('hidden');
+            }
+        };
+
+        window.closePhotoViewer = function() {
+            document.getElementById('photo-viewer-modal').classList.add('hidden');
+            document.getElementById('photo-viewer-img').src = '';
+        };
+
 
         // --- QR Scanner Logic ---
         
@@ -921,7 +992,6 @@
                 html5QrcodeScanner = new Html5Qrcode("qr-reader");
             }
             
-            // Prevent camera collision if it is already transitioning
             if (cameraStarting || cameraScanning) return; 
             
             cameraStarting = true;
@@ -941,28 +1011,46 @@
         };
 
         window.closeScanner = function() {
-            // Hide UI immediately for good user experience
             document.getElementById('scanner-modal').classList.add('hidden');
             
-            // Shut down hardware in the background
             if (cameraScanning && html5QrcodeScanner) {
+                cameraStarting = true; // Block new opens while closing
                 html5QrcodeScanner.stop().then(() => {
                     cameraScanning = false;
+                    cameraStarting = false;
                     html5QrcodeScanner.clear();
                 }).catch(err => {
                     console.error("Failed to stop scanner", err);
                     cameraScanning = false; 
+                    cameraStarting = false;
                 });
             }
         };
 
         function onScanSuccess(decodedText, decodedResult) {
-            closeScanner(); // Safely shut down camera first
+            closeScanner();
             
             if (decodedText.trim() === activeScanState.expectedQr) {
+                
+                // Toilet Cooldown Check (45 mins)
+                if (activeScanState.expectedQr.includes('TOILET')) {
+                    const lastScanKey = 'last_scan_time_' + activeScanState.expectedQr;
+                    const lastScan = appState.data[lastScanKey];
+                    const nowMs = Date.now();
+                    
+                    if (lastScan && (nowMs - lastScan < 45 * 60 * 1000)) {
+                        const errToast = document.getElementById('alert-toast');
+                        document.getElementById('alert-title').innerText = "Cooldown Active";
+                        document.getElementById('alert-message').innerText = "You scanned this toilet recently. Please wait 45 minutes between checks.";
+                        errToast.classList.remove('hidden');
+                        setTimeout(() => errToast.classList.add('hidden'), 4000);
+                        return; // Abort saving the scan
+                    }
+                    appState.data[lastScanKey] = nowMs;
+                }
+
                 appState.data[activeScanState.keyId] = true;
                 
-                // Record exact scan timestamp
                 const now = new Date();
                 appState.data[activeScanState.keyId + '_time'] = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 
@@ -1040,7 +1128,8 @@
             body += `DEDICATED TASK OF THE DAY:\n`;
             body += `----------------------------------------------\n`;
             body += `Task: ${d['dedicated-task-desc'] || 'None assigned'}\n`;
-            body += `Status: ${d['scan_dedicated_task'] ? 'Completed' : 'Pending'}\n\n`;
+            body += `QR Scanned: ${d['scan_dedicated_task'] ? 'Completed' : 'Pending'}\n`;
+            body += `Photo Verified: ${d['dedicated_task_photo'] ? 'Completed' : 'Pending'}\n\n`;
 
             body += `OUTSTANDING TASKS / DEFECTS:\n`;
             body += `----------------------------------------------\n`;
