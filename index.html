@@ -132,4 +132,981 @@
                         <p class="text-gray-600 text-xs">Vacuum/sweep floors. Wipe furniture. Polish glass. Skirting dust-free. Empty bins.</p>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                        <h4 class="font-bold text-onom
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-utensils text-gray-400"></i> Restaurants & Outside Seating</h4>
+                        <p class="text-gray-600 text-xs">Wipe tables/chairs. Clean table bases. Remove floor marks. Empty bins. Ensure neat presentation.</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-elevator text-gray-400"></i> Corridors & Lifts</h4>
+                        <p class="text-gray-600 text-xs">Vacuum carpets. Spot-clean walls/skirting. Wipe lift doors and buttons. Clear room service trays if visible.</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-briefcase text-gray-400"></i> Back Offices & Canteen</h4>
+                        <p class="text-gray-600 text-xs">Empty bins. Wipe canteen tables and counters. Sweep/mop canteen floor. Ensure staff areas are presentable.</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-restroom text-gray-400"></i> Toilets (Lobby, Rest, Staff)</h4>
+                        <p class="text-gray-600 text-xs">Clean & sanitise urinals/toilets. Floors dry. Replenish toilet paper, soap, towels. Empty bins. No odours. (Scanned dynamically during shift).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dedicated Task of the Day -->
+        <section class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-onomo-yellow mt-6">
+            <h3 class="font-bold text-lg text-onomo-black mb-1 flex items-center gap-2 uppercase">
+                <i class="fa-solid fa-star text-onomo-yellow"></i> Dedicated Task
+            </h3>
+            <p class="text-xs text-gray-500 mb-3">Supervisor to assign a specific task for the shift. Photo required.</p>
+            <input type="text" id="dedicated-task-desc" class="data-input w-full p-2.5 mb-3 border border-gray-300 rounded-lg focus:border-onomo-yellow focus:ring-1 focus:ring-onomo-yellow outline-none text-sm transition-colors" placeholder="e.g., Deep clean lobby chandeliers" oninput="triggerSave()">
+            <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                <span class="text-xs font-semibold text-gray-700">Photo Proof</span>
+                <span id="dedicated-task-btn-container"></span>
+            </div>
+        </section>
+
+        <!-- Shift Workflow (Unified) -->
+        <div class="mt-6">
+            <h3 class="font-bold text-lg text-onomo-black mb-3 flex items-center gap-2 uppercase">
+                <i class="fa-solid fa-route text-onomo-yellow"></i> 
+                Shift Workflow
+            </h3>
+            <div id="section-general" class="space-y-4">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- Defect Reporting -->
+        <section class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mt-6">
+            <h3 class="font-bold text-lg text-onomo-black mb-3 flex items-center gap-2 uppercase">
+                <i class="fa-solid fa-triangle-exclamation text-red-500"></i> Defect Reporting
+            </h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Issue Category</label>
+                    <select id="defect-category" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm bg-white" onchange="triggerSave()">
+                        <option value="">-- Select Category --</option>
+                        <option value="Plumbing">Plumbing (Leaks, Toilets)</option>
+                        <option value="Electrical">Electrical (Lights, Sockets)</option>
+                        <option value="Furniture">Furniture & Fixtures</option>
+                        <option value="General">General / Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
+                    <textarea id="outstanding-tasks" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="3" oninput="triggerSave()" placeholder="Describe the specific location and issue (e.g. Major spill in Restroom)..."></textarea>
+                </div>
+                <button onclick="sendWhatsAppMaintenance()" class="w-full bg-green-500 text-white font-bold py-2.5 px-4 rounded-lg shadow hover:bg-green-600 transition flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Alert Maintenance on WhatsApp
+                </button>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Attendant Signature (End of Shift)</label>
+                <input type="text" id="attendant-sig" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" placeholder="Type initials/name" oninput="triggerSave()">
+            </div>
+        </section>
+
+        <!-- Supervisor Verification Section -->
+        <section class="bg-gray-800 p-5 rounded-xl shadow-sm border-t-4 border-onomo-yellow mt-8 relative overflow-hidden" id="supervisor-section">
+            
+            <h2 class="font-bold text-lg mb-4 uppercase flex items-center gap-2 text-white">
+                <i class="fa-solid fa-user-shield text-onomo-yellow"></i> Supervisor Tracker
+            </h2>
+
+            <!-- Locked State -->
+            <div id="supervisor-locked" class="text-center py-6">
+                <i class="fa-solid fa-lock text-gray-500 text-4xl mb-3"></i>
+                <p class="text-sm text-gray-400 mb-4">A supervisor must scan their unique QR code to unlock verification and allow report submission.</p>
+                <button onclick="openScanner('sup_unlocked', 'QR_SUPERVISOR', 'Supervisor Authorization')" class="bg-onomo-yellow text-onomo-black font-bold py-2.5 px-6 rounded-lg shadow-lg hover:bg-yellow-400 transition">
+                    <i class="fa-solid fa-qrcode mr-2"></i> Scan Supervisor ID
+                </button>
+            </div>
+
+            <!-- Unlocked State -->
+            <div id="supervisor-unlocked" class="hidden space-y-4 bg-white p-4 rounded-lg mt-2">
+                <div class="flex items-center gap-2 mb-2 text-green-600 font-bold text-sm bg-green-50 p-2 rounded">
+                    <i class="fa-solid fa-unlock"></i> Supervisor Authorized
+                </div>
+                
+                <div class="space-y-3" id="supervisor-checks">
+                    <!-- Checks injected via JS -->
+                </div>
+
+                <!-- Supervisor Scans -->
+                <div id="supervisor-scans" class="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                    <!-- Scans injected via JS -->
+                </div>
+                
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Supervisor Name/Signature</label>
+                    <input type="text" id="supervisor-sig" class="data-input w-full p-2 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" placeholder="Supervisor Name" oninput="triggerSave()">
+                </div>
+                <div class="mt-3">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Comments</label>
+                    <textarea id="supervisor-comments" class="data-input w-full p-2 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="2" oninput="triggerSave()"></textarea>
+                </div>
+
+                <button id="btn-generate-report" onclick="generateEmailReport()" class="w-full bg-onomo-yellow text-onomo-black p-4 rounded-xl shadow-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-yellow-400 transition-colors mt-6 opacity-50 cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-paper-plane"></i> Generate & Send Report
+                </button>
+            </div>
+            
+        </section>
+
+    </main>
+
+    <!-- Modals & Toasts -->
+
+    <!-- Hidden Camera Input -->
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoUpload(event)">
+
+    <!-- Photo Viewer Modal -->
+    <div id="photo-viewer-modal" class="fixed inset-0 bg-black/90 z-[110] hidden flex flex-col items-center justify-center p-4">
+        <button onclick="closePhotoViewer()" class="absolute top-4 right-4 text-white text-3xl font-bold">&times;</button>
+        <img id="photo-viewer-img" src="" class="max-w-full max-h-[80vh] rounded-lg object-contain border-2 border-white shadow-2xl">
+    </div>
+
+    <!-- Scanner Modal -->
+    <div id="scanner-modal" class="fixed inset-0 bg-black z-[100] hidden flex flex-col">
+        <div class="p-4 bg-gray-900 text-white flex justify-between items-center shadow-lg">
+            <div>
+                <h3 class="font-bold text-lg text-onomo-yellow">Scan QR Code</h3>
+                <p id="scanner-subtitle" class="text-xs text-gray-400">Scanning for...</p>
+            </div>
+            <button onclick="closeScanner()" class="text-gray-400 hover:text-white text-3xl px-2">&times;</button>
+        </div>
+        <div class="flex-1 flex items-center justify-center bg-black p-4 relative">
+            <div id="qr-reader" class="w-full max-w-sm"></div>
+            <!-- Fallback text while loading -->
+            <p id="camera-loading-text" class="absolute text-gray-500 text-sm z-[-1]">Initializing Camera...</p>
+        </div>
+        
+        <!-- Developer fallback -->
+        <div class="p-6 bg-gray-900 text-center border-t border-gray-800">
+            <p class="text-gray-500 text-xs mb-2">Camera not working or testing locally?</p>
+            <button onclick="simulateSuccessfulScan()" class="bg-gray-800 border border-gray-700 text-gray-300 text-xs py-2 px-4 rounded hover:bg-gray-700 transition-colors">
+                Simulate Successful Scan
+            </button>
+        </div>
+    </div>
+
+    <!-- QR Guide Modal -->
+    <div id="qr-guide-modal" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 sticky top-0 bg-white pb-2 border-b border-gray-100">
+                <h3 class="font-bold text-lg text-onomo-black flex items-center gap-2">
+                    <i class="fa-solid fa-qrcode text-onomo-yellow"></i> Expected QR Codes
+                </h3>
+                <button onclick="toggleModal('qr-guide-modal')" class="text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Print QR codes containing exactly these text strings for each location:</p>
+            
+            <ul class="space-y-1 text-xs font-mono bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <!-- General -->
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_ENTRANCE</span> <span class="text-gray-500">Front Entrance</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_PARKING</span> <span class="text-gray-500">Parking Areas</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_LOBBY</span> <span class="text-gray-500">Reception Lobby</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_RESTAURANT</span> <span class="text-gray-500">Restaurant & Outside</span></li>
+                <li class="flex flex-col py-1.5 border-b border-gray-200">
+                    <div class="flex justify-between"><span class="font-bold text-gray-800">QR_CORRIDORS_F1 to F5</span> <span class="text-gray-500">Corridors (Flr 1-5)</span></div>
+                </li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_BACK_OFFICE</span> <span class="text-gray-500">Back Offices</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_CANTEEN</span> <span class="text-gray-500">Staff Canteen</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_HANDOVER</span> <span class="text-gray-500">End of Shift Handover</span></li>
+                <!-- Toilets -->
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_TOILET_LOBBY</span> <span class="text-gray-500">Lobby Toilet</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_TOILET_REST</span> <span class="text-gray-500">Restaurant Toilet</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_TOILET_STAFF</span> <span class="text-gray-500">Staff Toilet</span></li>
+                <!-- Dedicated -->
+                <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_DEDICATED_TASK</span> <span class="text-gray-500">Dedicated Task</span></li>
+                <!-- Auth -->
+                <li class="flex justify-between pt-1.5"><span class="font-bold text-blue-600">QR_SUPERVISOR</span> <span class="text-gray-500">Supervisor ID Card</span></li>
+            </ul>
+            
+            <button onclick="toggleModal('qr-guide-modal')" class="w-full mt-5 bg-gray-800 text-white font-bold py-2 rounded-lg hover:bg-gray-700">Close Guide</button>
+        </div>
+    </div>
+
+    <!-- Alert Toast (Firebase Errors / Scan Errors) -->
+    <div id="alert-toast" class="fixed top-24 left-4 right-4 max-w-sm mx-auto bg-red-600 text-white p-4 rounded-xl shadow-2xl hidden z-50 flex items-start gap-3 border border-red-800 transition-opacity">
+        <i class="fa-solid fa-circle-exclamation text-2xl mt-0.5 text-red-200"></i>
+        <div class="flex-1">
+            <h4 class="font-bold text-sm" id="alert-title">Error</h4>
+            <p class="text-xs text-red-100 mt-1" id="alert-message">Something went wrong.</p>
+        </div>
+        <button onclick="closeToast('alert-toast')" class="ml-auto text-red-200 hover:text-white p-1">&times;</button>
+    </div>
+
+    <!-- Success Toast (Scan OK) -->
+    <div id="success-toast" class="fixed top-24 left-4 right-4 max-w-sm mx-auto bg-green-600 text-white p-4 rounded-xl shadow-2xl hidden z-50 flex items-center gap-3 border border-green-800 transition-opacity">
+        <i class="fa-solid fa-check-circle text-2xl text-green-200"></i>
+        <div>
+            <h4 class="font-bold text-sm">Scan Successful</h4>
+            <p class="text-xs text-green-100">Location verified.</p>
+        </div>
+    </div>
+
+    <!-- Save Notification -->
+    <div id="save-toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg transition-opacity opacity-0 pointer-events-none z-50 text-xs font-mono font-bold tracking-wider">
+        <i class="fa-solid fa-cloud-arrow-up text-onomo-yellow mr-2"></i> SAVED
+    </div>
+
+    <!-- Firebase SDK & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ENVIRONMENT SETUP
+        const appId = "onomo-checklist-app";
+        
+        // --- LIVE FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCOuyE3BXTHQ5L1iPMYJCiB7_GR63FucQQ",
+          authDomain: "onomo-attendant-app.firebaseapp.com",
+          projectId: "onomo-attendant-app",
+          storageBucket: "onomo-attendant-app.firebasestorage.app",
+          messagingSenderId: "478120958028",
+          appId: "1:478120958028:web:8d5de04bf8455fdd41bce9"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let currentUser = null;
+        
+        // --- UNIFIED DATA STRUCTURE ---
+        // Toilets are integrated directly into the general workflow array.
+        const hourlyToilets = [
+            {qr: 'QR_TOILET_LOBBY', name: 'Lobby Toilet', reqPhoto: false},
+            {qr: 'QR_TOILET_REST', name: 'Restaurant Toilet', reqPhoto: false},
+            {qr: 'QR_TOILET_STAFF', name: 'Staff Toilet', reqPhoto: false}
+        ];
+
+        const SHIFTS = {
+            'Morning': {
+                general: [
+                    { time: '06:00', label: '06:00–07:00', title: 'Entrance, Parking & Toilets', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}, {qr: 'QR_PARKING', name: 'Parking', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '07:00', label: '07:00–08:00', title: 'Reception Lobby & Toilets', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '08:00', label: '08:00–09:00', title: 'Restaurant & Toilets', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '09:00', label: '09:00–10:00', title: 'Corridors, Lifts & Toilets', tasks: [{qr: 'QR_CORRIDORS_F1', name: 'Floor 1', reqPhoto: true}, {qr: 'QR_CORRIDORS_F2', name: 'Floor 2', reqPhoto: true}, {qr: 'QR_CORRIDORS_F3', name: 'Floor 3', reqPhoto: true}, {qr: 'QR_CORRIDORS_F4', name: 'Floor 4', reqPhoto: true}, {qr: 'QR_CORRIDORS_F5', name: 'Floor 5', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '10:00', label: '10:00–11:00', title: 'Back Offices, Canteen & Toilets', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office', reqPhoto: true}, {qr: 'QR_CANTEEN', name: 'Canteen', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '11:00', label: '11:00–12:00', title: 'Restaurant Detail & Toilets', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '12:00', label: '12:00–13:00', title: 'Lobby, Entrances & Toilets', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, {qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '13:00', label: '13:00–14:00', title: 'Final Inspection, Handover & Toilets', tasks: [{qr: 'QR_HANDOVER', name: 'Handover', reqPhoto: true}, ...hourlyToilets] }
+                ]
+            },
+            'Late': {
+                general: [
+                    { time: '14:00', label: '14:00–15:00', title: 'Shift Takeover, Parking & Toilets', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}, {qr: 'QR_PARKING', name: 'Parking', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '15:00', label: '15:00–16:00', title: 'Reception Lobby & Toilets', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '16:00', label: '16:00–17:00', title: 'Restaurant & Toilets', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '17:00', label: '17:00–18:00', title: 'Corridors, Lifts & Toilets', tasks: [{qr: 'QR_CORRIDORS_F1', name: 'Floor 1', reqPhoto: true}, {qr: 'QR_CORRIDORS_F2', name: 'Floor 2', reqPhoto: true}, {qr: 'QR_CORRIDORS_F3', name: 'Floor 3', reqPhoto: true}, {qr: 'QR_CORRIDORS_F4', name: 'Floor 4', reqPhoto: true}, {qr: 'QR_CORRIDORS_F5', name: 'Floor 5', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '18:00', label: '18:00–19:00', title: 'Back Offices, Canteen & Toilets', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office', reqPhoto: true}, {qr: 'QR_CANTEEN', name: 'Canteen', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '19:00', label: '19:00–20:00', title: 'Restaurant Detail & Toilets', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '20:00', label: '20:00–21:00', title: 'Reception Lobby & Toilets', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, ...hourlyToilets] },
+                    { time: '21:00', label: '21:00–22:00', title: 'Final Inspection, Handover & Toilets', tasks: [{qr: 'QR_HANDOVER', name: 'Handover', reqPhoto: true}, ...hourlyToilets] }
+                ]
+            }
+        };
+
+        const SUPERVISOR_TASKS = [
+            "All hourly locations and toilets verified",
+            "Consumables replenished",
+            "Maintenance issues reported",
+            "Shift handover received"
+        ];
+
+        // State Management
+        let appState = {
+            currentShift: 'Morning',
+            dateString: new Date().toISOString().split('T')[0],
+            data: {},
+            currentProgress: 0,
+            totalRequiredScans: 0
+        };
+        
+        let saveTimeout = null;
+        let html5QrcodeScanner = null;
+        let cameraStarting = false;
+        let cameraScanning = false;
+        
+        // Active Scan Context
+        let activeScanState = { keyId: null, expectedQr: null, label: null };
+
+        // Helper to sanitize time strings for HTML IDs
+        function sanitizeId(str) {
+            return str.replace(/[^a-zA-Z0-9_-]/g, '');
+        }
+
+        // --- DIRECT INITIALIZATION ---
+        document.getElementById('doc-date').value = appState.dateString;
+        document.getElementById('btn-shift-morning').onclick = () => setShift('Morning');
+        document.getElementById('btn-shift-late').onclick = () => setShift('Late');
+        
+        renderUI();
+        initAuth();
+        setInterval(updateVisualStates, 60000); 
+
+        // --- Date Handler ---
+        window.handleDateChange = function(newDateStr) {
+            if (!newDateStr) return;
+            appState.dateString = newDateStr;
+            appState.data = {}; 
+            renderUI(); 
+            loadData(); 
+        };
+
+        async function initAuth() {
+            try {
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('auth-status').innerText = 'Connected';
+                        document.getElementById('auth-status').classList.remove('text-gray-300', 'text-red-400');
+                        document.getElementById('auth-status').classList.add('text-green-400');
+                        loadData(); 
+                    }
+                });
+            } catch (error) {
+                console.warn("Firebase Auth Error:", error);
+                document.getElementById('auth-status').innerText = 'Auth Error';
+                document.getElementById('auth-status').classList.remove('text-gray-300', 'text-green-400');
+                document.getElementById('auth-status').classList.add('text-red-400');
+            }
+        }
+
+        function setShift(shiftName) {
+            if (appState.currentShift === shiftName) return;
+            appState.currentShift = shiftName;
+            
+            const btnM = document.getElementById('btn-shift-morning');
+            const btnL = document.getElementById('btn-shift-late');
+            
+            if (shiftName === 'Morning') {
+                btnM.className = 'flex-1 text-sm py-1.5 rounded-md bg-white shadow-sm font-bold text-onomo-black transition';
+                btnL.className = 'flex-1 text-sm py-1.5 rounded-md text-gray-500 font-semibold transition hover:bg-gray-200';
+            } else {
+                btnL.className = 'flex-1 text-sm py-1.5 rounded-md bg-white shadow-sm font-bold text-onomo-black transition';
+                btnM.className = 'flex-1 text-sm py-1.5 rounded-md text-gray-500 font-semibold transition hover:bg-gray-200';
+            }
+            
+            appState.data = {}; 
+            renderUI(); 
+            loadData(); 
+        }
+
+        function getDocId() {
+            return `${appState.dateString}_${appState.currentShift}`;
+        }
+
+        async function loadData() {
+            if (!currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'onomo_checklists_v2', getDocId());
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    appState.data = docSnap.data();
+                } else {
+                    appState.data = {}; 
+                }
+            } catch (error) {
+                console.warn("Firebase Database Error:", error);
+                const errToast = document.getElementById('alert-toast');
+                document.getElementById('alert-title').innerText = "Database Read Error";
+                document.getElementById('alert-message').innerText = error.message;
+                errToast.classList.remove('hidden');
+            }
+            populateUIFromState(); 
+        }
+
+        window.triggerSave = function() {
+            document.querySelectorAll('.data-input').forEach(el => {
+                if (el.type === 'checkbox') {
+                    appState.data[el.id] = el.checked;
+                } else {
+                    appState.data[el.id] = el.value;
+                }
+            });
+
+            updateVisualStates();
+            updateProgressBar();
+
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveToFirebase, 1000);
+        };
+
+        async function saveToFirebase() {
+            if (!currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'onomo_checklists_v2', getDocId());
+            try {
+                await setDoc(docRef, appState.data, { merge: true });
+                showSaveToast();
+            } catch (error) {
+                console.error("Firebase Save Error:", error);
+                const errToast = document.getElementById('alert-toast');
+                document.getElementById('alert-title').innerText = "Save Failed";
+                document.getElementById('alert-message').innerText = "Could not sync data. Ensure you have a connection, or you may have exceeded photo limits.";
+                errToast.classList.remove('hidden');
+            }
+        }
+
+        // --- NEW: Dynamic Action Buttons (Handles Toilet scans seamlessly) ---
+        function getActionBtnsHTML(baseKey, expectedQr, label, reqPhoto) {
+            const scanKey = 'scan_' + baseKey;
+            const photoKey = 'photo_' + baseKey;
+
+            const isScanned = !!appState.data[scanKey];
+            const hasPhoto = !!appState.data[photoKey];
+
+            let photoHtml = '';
+            if (reqPhoto) {
+                if (hasPhoto) {
+                    photoHtml = `<img src="${appState.data[photoKey]}" class="w-7 h-7 rounded bg-gray-100 border border-green-500 object-cover cursor-pointer" onclick="viewPhoto('${photoKey}')">`;
+                } else {
+                    photoHtml = `<button onclick="triggerCamera('${photoKey}')" class="bg-blue-500 text-white font-bold w-7 h-7 flex justify-center items-center rounded text-xs shadow hover:bg-blue-600 transition flex-shrink-0"><i class="fa-solid fa-camera"></i></button>`;
+                }
+            }
+
+            let scanHtml = '';
+            if (isScanned) {
+                scanHtml = `<button class="bg-green-500 text-white w-7 h-7 flex justify-center items-center rounded text-xs shadow-sm cursor-default flex-shrink-0"><i class="fa-solid fa-check"></i></button>`;
+            } else {
+                const safeQr = expectedQr.replace(/'/g, "\\'");
+                const safeLabel = label.replace(/'/g, "\\'");
+                scanHtml = `<button onclick="openScanner('${scanKey}', '${safeQr}', '${safeLabel}')" class="bg-gray-800 text-white font-bold w-7 h-7 flex justify-center items-center rounded text-xs shadow hover:bg-gray-700 transition flex-shrink-0"><i class="fa-solid fa-qrcode"></i></button>`;
+            }
+
+            return `<div class="flex items-center gap-2">${photoHtml}${scanHtml}</div>`;
+        }
+
+        function getSinglePhotoBtnHTML(photoKey) {
+            const hasPhoto = !!appState.data[photoKey];
+            if (hasPhoto) {
+                return `<img src="${appState.data[photoKey]}" class="w-8 h-8 rounded border border-green-500 object-cover cursor-pointer" onclick="viewPhoto('${photoKey}')">`;
+            } else {
+                return `<button onclick="triggerCamera('${photoKey}')" class="bg-blue-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow hover:bg-blue-600 transition flex-shrink-0 flex items-center gap-1"><i class="fa-solid fa-camera"></i> Photo</button>`;
+            }
+        }
+
+        function getSingleScanBtnHTML(dataKey, expectedQr, label) {
+            const isScanned = !!appState.data[dataKey];
+            if (isScanned) {
+                return `<button class="bg-green-500 text-white font-bold py-1.5 px-3 rounded-lg text-[10px] flex items-center gap-1 shadow-sm flex-shrink-0 cursor-default"><i class="fa-solid fa-check"></i> Done</button>`;
+            } else {
+                const safeQr = expectedQr.replace(/'/g, "\\'");
+                const safeLabel = label.replace(/'/g, "\\'");
+                return `<button onclick="openScanner('${dataKey}', '${safeQr}', '${safeLabel}')" class="bg-gray-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center gap-1 shadow hover:bg-gray-700 transition flex-shrink-0"><i class="fa-solid fa-qrcode"></i> Scan</button>`;
+            }
+        }
+
+        // --- Render UI ---
+        function renderUI() {
+            const shiftBlocks = SHIFTS[appState.currentShift];
+            let genHtml = '';
+            
+            // Render Dedicated Task Button
+            const dtContainer = document.getElementById('dedicated-task-btn-container');
+            if (dtContainer) dtContainer.innerHTML = getSinglePhotoBtnHTML('photo_dedicated_task');
+
+            // Section: Unified General Workflow (Includes Toilets automatically)
+            shiftBlocks.general.forEach(block => {
+                const safeTimeId = sanitizeId(block.time); 
+                let scansHtml = '';
+                block.tasks.forEach(t => {
+                    const baseKey = `gen_${safeTimeId}_${t.qr}`;
+                    scansHtml += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                        <span class="text-xs font-bold text-gray-700 w-2/3">${t.name}</span>
+                        ${getActionBtnsHTML(baseKey, t.qr, t.name, t.reqPhoto)}
+                    </div>`;
+                });
+
+                genHtml += `
+                <div id="gen-block-${safeTimeId}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+                    <button class="w-full p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('acc-gen-${safeTimeId}')">
+                        <div class="flex flex-col items-start text-left">
+                            <span class="text-[10px] font-bold text-onomo-yellow bg-gray-800 px-2 py-0.5 rounded uppercase tracking-wider mb-1">${block.label}</span>
+                            <span class="font-bold text-gray-800 text-sm">${block.title}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-chevron-down text-gray-400 transition-transform" id="icon-gen-${safeTimeId}"></i>
+                        </div>
+                    </button>
+                    <div id="acc-gen-${safeTimeId}" class="accordion-content bg-white">
+                        <div class="p-3 space-y-2 bg-gray-50/50">
+                            ${scansHtml}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('section-general').innerHTML = genHtml;
+
+            // Render Supervisor Checks
+            const supContainer = document.getElementById('supervisor-checks');
+            let supHtml = '';
+            SUPERVISOR_TASKS.forEach((task, idx) => {
+                supHtml += `
+                <div class="flex items-start gap-3 bg-gray-50 p-2 rounded border border-gray-200">
+                    <input type="checkbox" id="sup_check_${idx}" class="data-input check-large mt-0.5 flex-shrink-0" onchange="triggerSave()">
+                    <label for="sup_check_${idx}" class="text-sm text-gray-700 font-medium leading-tight">${task}</label>
+                </div>`;
+            });
+            supContainer.innerHTML = supHtml;
+
+            // Render Supervisor Physical Scans
+            const supScansContainer = document.getElementById('supervisor-scans');
+            if (supScansContainer) {
+                supScansContainer.innerHTML = `
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2 mt-2"><i class="fa-solid fa-person-walking"></i> Location Verification Scans</h4>
+                    <p class="text-[10px] text-gray-400 mb-2">Supervisor must scan these key areas to verify the floor walk.</p>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Lobby</span>
+                        ${getSingleScanBtnHTML('scan_sup_verify_lobby', 'QR_LOBBY', 'Sup Verify Lobby')}
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Restaurant</span>
+                        ${getSingleScanBtnHTML('scan_sup_verify_rest', 'QR_RESTAURANT', 'Sup Verify Restaurant')}
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Toilets</span>
+                        ${getSingleScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
+                    </div>
+                `;
+            }
+            
+            populateUIFromState();
+        }
+
+        function populateUIFromState() {
+            document.querySelectorAll('.data-input').forEach(el => {
+                if (el.type === 'checkbox') {
+                    el.checked = !!appState.data[el.id];
+                } else {
+                    el.value = appState.data[el.id] || '';
+                }
+            });
+            
+            renderUIButtonsOnly();
+            updateVisualStates();
+            updateProgressBar();
+        }
+        
+        function renderUIButtonsOnly() {
+            const shiftBlocks = SHIFTS[appState.currentShift];
+            
+            const dtContainer = document.getElementById('dedicated-task-btn-container');
+            if (dtContainer) dtContainer.innerHTML = getSinglePhotoBtnHTML('photo_dedicated_task');
+            
+            shiftBlocks.general.forEach(block => {
+                const safeTimeId = sanitizeId(block.time);
+                const accGen = document.getElementById(`acc-gen-${safeTimeId}`);
+                if (!accGen) return;
+                
+                let scansHtml = '';
+                block.tasks.forEach(t => {
+                    const baseKey = `gen_${safeTimeId}_${t.qr}`;
+                    scansHtml += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                        <span class="text-xs font-bold text-gray-700 w-2/3">${t.name}</span>
+                        ${getActionBtnsHTML(baseKey, t.qr, t.name, t.reqPhoto)}
+                    </div>`;
+                });
+                accGen.querySelector('div').innerHTML = scansHtml;
+            });
+            
+            // Update Supervisor Scans dynamically
+            const supScansContainer = document.getElementById('supervisor-scans');
+            if (supScansContainer) {
+                supScansContainer.innerHTML = `
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2 mt-2"><i class="fa-solid fa-person-walking"></i> Location Verification Scans</h4>
+                    <p class="text-[10px] text-gray-400 mb-2">Supervisor must scan these key areas to verify the floor walk.</p>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Lobby</span>
+                        ${getSingleScanBtnHTML('scan_sup_verify_lobby', 'QR_LOBBY', 'Sup Verify Lobby')}
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Restaurant</span>
+                        ${getSingleScanBtnHTML('scan_sup_verify_rest', 'QR_RESTAURANT', 'Sup Verify Restaurant')}
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+                        <span class="text-xs font-bold text-gray-700">Verify Toilets</span>
+                        ${getSingleScanBtnHTML('scan_sup_verify_toilet', 'QR_TOILET_LOBBY', 'Sup Verify Toilet')}
+                    </div>
+                `;
+            }
+
+            // Immediately toggle Supervisor Lock UI
+            const isSupUnlocked = !!appState.data['sup_unlocked'];
+            if (isSupUnlocked) {
+                document.getElementById('supervisor-locked').classList.add('hidden');
+                document.getElementById('supervisor-unlocked').classList.remove('hidden');
+                document.getElementById('supervisor-section').classList.replace('bg-gray-800', 'bg-white');
+                document.getElementById('supervisor-section').querySelector('h2').classList.replace('text-white', 'text-onomo-black');
+            } else {
+                document.getElementById('supervisor-locked').classList.remove('hidden');
+                document.getElementById('supervisor-unlocked').classList.add('hidden');
+                document.getElementById('supervisor-section').classList.replace('bg-white', 'bg-gray-800');
+                document.getElementById('supervisor-section').querySelector('h2').classList.replace('text-onomo-black', 'text-white');
+            }
+        }
+
+        function updateProgressBar() {
+            let completedScans = 0;
+            appState.totalRequiredScans = 0;
+
+            const shiftBlocks = SHIFTS[appState.currentShift];
+            
+            // Unified iteration for General AND Toilets
+            shiftBlocks.general.forEach(block => {
+                const safeTimeId = sanitizeId(block.time);
+                block.tasks.forEach(t => {
+                    appState.totalRequiredScans += 1; // Count the scan requirement
+                    if (appState.data[`scan_gen_${safeTimeId}_${t.qr}`]) completedScans++;
+                    
+                    if (t.reqPhoto) {
+                        appState.totalRequiredScans += 1; // Count the photo requirement if applicable
+                        if (appState.data[`photo_gen_${safeTimeId}_${t.qr}`]) completedScans++;
+                    }
+                });
+            });
+            
+            // Dedicated & Supervisor
+            appState.totalRequiredScans += 1; // Dedicated photo
+            if (appState.data['photo_dedicated_task']) completedScans++;
+            
+            appState.totalRequiredScans += 4; // 1 Unlock + 3 verification scans
+            if (appState.data['sup_unlocked']) completedScans++;
+            if (appState.data['scan_sup_verify_lobby']) completedScans++;
+            if (appState.data['scan_sup_verify_rest']) completedScans++;
+            if (appState.data['scan_sup_verify_toilet']) completedScans++;
+            
+            const safeTotal = appState.totalRequiredScans > 0 ? appState.totalRequiredScans : 1;
+            const percentage = Math.min(100, Math.round((completedScans / safeTotal) * 100));
+            appState.currentProgress = percentage;
+            
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            document.getElementById('progress-text').innerText = `${percentage}% (${completedScans}/${appState.totalRequiredScans})`;
+            
+            const reportBtn = document.getElementById('btn-generate-report');
+            if(percentage === 100) {
+                 document.getElementById('progress-bar').classList.replace('bg-onomo-yellow', 'bg-green-500');
+                 if(reportBtn) {
+                     reportBtn.disabled = false;
+                     reportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                 }
+            } else {
+                 document.getElementById('progress-bar').classList.replace('bg-green-500', 'bg-onomo-yellow');
+                 if(reportBtn) {
+                     reportBtn.disabled = true;
+                     reportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                 }
+            }
+        }
+
+        function updateVisualStates() {
+            const currentHour = new Date().getHours();
+            const shiftBlocks = SHIFTS[appState.currentShift];
+
+            shiftBlocks.general.forEach(block => {
+                const blockHour = parseInt(block.time.split(':')[0], 10);
+                const safeTimeId = sanitizeId(block.time);
+                const blockEl = document.getElementById(`gen-block-${safeTimeId}`);
+                if (!blockEl) return;
+
+                blockEl.classList.remove('border-red-500', 'border-2', 'ring-2', 'ring-onomo-yellow', 'shadow-md', 'border-green-500');
+                
+                let allScanned = true;
+                block.tasks.forEach(t => {
+                    if (!appState.data[`scan_gen_${safeTimeId}_${t.qr}`]) {
+                        allScanned = false;
+                    }
+                    if (t.reqPhoto && !appState.data[`photo_gen_${safeTimeId}_${t.qr}`]) {
+                        allScanned = false;
+                    }
+                });
+
+                if (allScanned) {
+                    blockEl.classList.add('border-green-500', 'border-2');
+                } else {
+                    if (blockHour === currentHour) {
+                        blockEl.classList.add('ring-2', 'ring-onomo-yellow', 'shadow-md');
+                    } else if (blockHour < currentHour) {
+                        blockEl.classList.add('border-red-500', 'border-2');
+                    }
+                }
+            });
+        }
+
+        // --- Photo & Camera Upload Logic ---
+        
+        window.triggerCamera = function(dataKeyId) {
+            activeScanState = { keyId: dataKeyId }; 
+            document.getElementById('camera-input').click();
+        };
+
+        window.handlePhotoUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 300; // Compress heavily to save db space
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% quality JPEG
+                    appState.data[activeScanState.keyId] = dataUrl;
+                    
+                    renderUIButtonsOnly();
+                    triggerSave();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+        
+        window.viewPhoto = function(dataKeyId) {
+            const photoData = appState.data[dataKeyId];
+            if (photoData) {
+                document.getElementById('photo-viewer-img').src = photoData;
+                document.getElementById('photo-viewer-modal').classList.remove('hidden');
+            }
+        };
+
+        window.closePhotoViewer = function() {
+            document.getElementById('photo-viewer-modal').classList.add('hidden');
+            document.getElementById('photo-viewer-img').src = '';
+        };
+
+
+        // --- QR Scanner Logic ---
+        
+        window.openScanner = function(dataKeyId, expectedQrCode, labelDescription) {
+            activeScanState = { keyId: dataKeyId, expectedQr: expectedQrCode, label: labelDescription };
+            document.getElementById('scanner-subtitle').innerText = `Target: ${expectedQrCode} (${labelDescription})`;
+            document.getElementById('scanner-modal').classList.remove('hidden');
+            document.getElementById('camera-loading-text').innerText = "Initializing Camera...";
+            
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5Qrcode("qr-reader");
+            }
+            
+            if (cameraStarting || cameraScanning) return; 
+            
+            cameraStarting = true;
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 200, height: 200 } }, // Made qrbox smaller for mobile focus
+                onScanSuccess,
+                (err) => { /* ignore routine scan frame failures */ }
+            ).then(() => {
+                cameraStarting = false;
+                cameraScanning = true;
+            }).catch(err => {
+                cameraStarting = false;
+                console.warn("Camera init failed.", err);
+                document.getElementById('camera-loading-text').innerText = "Camera unavailable. Check permissions.";
+            });
+        };
+
+        window.closeScanner = function() {
+            document.getElementById('scanner-modal').classList.add('hidden');
+            
+            if (cameraScanning && html5QrcodeScanner) {
+                cameraStarting = true; // Block new opens while closing
+                html5QrcodeScanner.stop().then(() => {
+                    cameraScanning = false;
+                    cameraStarting = false;
+                    html5QrcodeScanner.clear();
+                }).catch(err => {
+                    console.error("Failed to stop scanner", err);
+                    cameraScanning = false; 
+                    cameraStarting = false;
+                });
+            }
+        };
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Delay closing scanner to prevent library race condition crash
+            setTimeout(() => closeScanner(), 100);
+            
+            // Normalize strings to prevent spacing or casing errors
+            const scannedText = decodedText.trim().toUpperCase();
+            const expectedText = activeScanState.expectedQr.trim().toUpperCase();
+
+            if (scannedText === expectedText) {
+                
+                // Toilet Cooldown Check (45 mins) - Ensure they don't just scan the same toilet back to back
+                if (expectedText.includes('TOILET')) {
+                    const lastScanKey = 'last_scan_time_' + activeScanState.expectedQr;
+                    const lastScan = appState.data[lastScanKey];
+                    const nowMs = Date.now();
+                    
+                    if (lastScan && (nowMs - lastScan < 45 * 60 * 1000)) {
+                        const errToast = document.getElementById('alert-toast');
+                        document.getElementById('alert-title').innerText = "Cooldown Active";
+                        document.getElementById('alert-message').innerText = "Scanned recently. Wait 45 mins between checks.";
+                        errToast.classList.remove('hidden');
+                        setTimeout(() => errToast.classList.add('hidden'), 4000);
+                        return; // Abort saving the scan
+                    }
+                    appState.data[lastScanKey] = nowMs;
+                }
+
+                appState.data[activeScanState.keyId] = true;
+                
+                const now = new Date();
+                appState.data[activeScanState.keyId + '_time'] = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                renderUIButtonsOnly(); 
+                triggerSave(); 
+                
+                const sToast = document.getElementById('success-toast');
+                sToast.classList.remove('hidden');
+                setTimeout(() => sToast.classList.add('hidden'), 2500);
+            } else {
+                const errToast = document.getElementById('alert-toast');
+                document.getElementById('alert-title').innerText = "Incorrect Location Code";
+                document.getElementById('alert-message').innerText = `Saw: [${scannedText}]. Expected: [${expectedText}].`;
+                errToast.classList.remove('hidden');
+                setTimeout(() => errToast.classList.add('hidden'), 5000);
+            }
+        }
+
+        window.simulateSuccessfulScan = function() {
+            if (activeScanState.expectedQr) {
+                onScanSuccess(activeScanState.expectedQr, null);
+            }
+        };
+
+        // --- UI Utils ---
+        window.toggleAccordion = function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            
+            const iconId = id.replace('acc-', 'icon-');
+            const icon = document.getElementById(iconId);
+            
+            if (el.classList.contains('open')) {
+                el.classList.remove('open');
+                if(icon) icon.style.transform = 'rotate(0deg)';
+            } else {
+                el.classList.add('open');
+                if(icon) icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        window.toggleModal = function(id) {
+            const modal = document.getElementById(id);
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        window.closeToast = function(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showSaveToast() {
+            const toast = document.getElementById('save-toast');
+            toast.classList.remove('opacity-0');
+            setTimeout(() => { toast.classList.add('opacity-0'); }, 1500);
+        }
+
+        // --- Email Reporting ---
+        window.generateEmailReport = function() {
+            if (appState.currentProgress < 100) return;
+
+            const d = appState.data;
+            const shiftName = appState.currentShift;
+            const shiftBlocks = SHIFTS[shiftName];
+            
+            let body = `ONOMO HOTEL SANDTON - PUBLIC AREAS REPORT\n`;
+            body += `==============================================\n`;
+            body += `Date: ${appState.dateString}\n`;
+            body += `Shift: ${shiftName}\n`;
+            body += `Attendant: ${d['attendant-name'] || 'N/A'}\n\n`;
+            
+            body += `DEDICATED TASK OF THE DAY:\n`;
+            body += `----------------------------------------------\n`;
+            body += `Task: ${d['dedicated-task-desc'] || 'None assigned'}\n`;
+            body += `Photo Verified: ${d['photo_dedicated_task'] ? 'Completed' : 'Pending'}\n\n`;
+
+            body += `OUTSTANDING TASKS / DEFECTS:\n`;
+            body += `----------------------------------------------\n`;
+            if (d['outstanding-tasks']) {
+                body += `Category: ${d['defect-category'] || 'Uncategorized'}\n`;
+                body += `Details: ${d['outstanding-tasks']}\n\n`;
+            } else {
+                body += `None reported.\n\n`;
+            }
+            
+            body += `SHIFT WORKFLOW (Includes Toilets):\n`;
+            body += `----------------------------------------------\n`;
+            shiftBlocks.general.forEach(block => {
+                const safeTimeId = sanitizeId(block.time);
+                body += `[${block.time}] ${block.title}\n`;
+                block.tasks.forEach(t => {
+                    const m = d[`scan_gen_${safeTimeId}_${t.qr}`] ? `Scanned @ ${d[`scan_gen_${safeTimeId}_${t.qr}_time`] || 'Unknown'}` : 'Missed';
+                    body += `    - ${t.name}: ${m}\n`;
+                });
+            });
+            
+            body += `\nSUPERVISOR VERIFICATION:\n`;
+            body += `----------------------------------------------\n`;
+            body += `Supervisor Unlock QR: ${d['sup_unlocked'] ? 'Scanned & Verified' : 'MISSING'}\n\n`;
+            
+            body += `Supervisor Area Scans:\n`;
+            body += `[${d['scan_sup_verify_lobby'] ? 'X' : ' '}] Lobby Verified\n`;
+            body += `[${d['scan_sup_verify_rest'] ? 'X' : ' '}] Restaurant Verified\n`;
+            body += `[${d['scan_sup_verify_toilet'] ? 'X' : ' '}] Toilets Verified\n\n`;
+
+            SUPERVISOR_TASKS.forEach((task, idx) => {
+                body += `[${!!d[`sup_check_${idx}`] ? 'X' : ' '}] ${task}\n`;
+            });
+            body += `\nComments: ${d['supervisor-comments'] || 'None'}\n`;
+            
+            body += `\nSIGNATURES:\n`;
+            body += `Attendant: ${d['attendant-sig'] || 'N/A'}\n`;
+            body += `Supervisor: ${d['supervisor-sig'] || 'N/A'}\n`;
+            
+            const subject = `Public Areas Checklist - ONOMO - ${appState.dateString} [${shiftName}]`;
+            const mailtoLink = `mailto:rdm@example.com,housekeeper@example.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoLink;
+        }
+
+        // --- WhatsApp Integration ---
+        window.sendWhatsAppMaintenance = function() {
+            const category = document.getElementById('defect-category').value || 'General Issue';
+            const desc = document.getElementById('outstanding-tasks').value;
+            
+            if (!desc) {
+                const errToast = document.getElementById('alert-toast');
+                document.getElementById('alert-title').innerText = "Missing Description";
+                document.getElementById('alert-message').innerText = "Please describe the issue before sending via WhatsApp.";
+                errToast.classList.remove('hidden');
+                setTimeout(() => errToast.classList.add('hidden'), 3000);
+                return;
+            }
+
+            const roomOrArea = "Public Areas (" + appState.currentShift + " Shift)";
+            const text = `🚨 *MAINTENANCE ALERT* 🚨\n*Location:* ${roomOrArea}\n*Category:* ${category}\n*Issue:* ${desc}\n*Reported By:* ${appState.data['attendant-name'] || 'Attendant'}`;
+            
+            const encodedText = encodeURIComponent(text);
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
+            window.open(whatsappUrl, '_blank');
+        }
+    </script>
+</body>
+</html>
