@@ -145,7 +145,7 @@
                     </div>
                     <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
                         <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-restroom text-gray-400"></i> Toilets (Lobby, Rest, Staff)</h4>
-                        <p class="text-gray-600 text-xs">Clean & sanitise urinals/toilets. Floors dry. Replenish toilet paper, soap, towels. Empty bins. No odours. (Checked dynamically during shift).</p>
+                        <p class="text-gray-600 text-xs">Clean & sanitise urinals/toilets. Floors dry. Replenish toilet paper, soap, towels. Empty bins. No odours. (Scanned dynamically during shift).</p>
                     </div>
                 </div>
             </div>
@@ -164,7 +164,7 @@
             </div>
         </section>
 
-        <!-- Shift Workflow -->
+        <!-- Shift Workflow (Unified) -->
         <div class="mt-6">
             <h3 class="font-bold text-lg text-onomo-black mb-3 flex items-center gap-2 uppercase">
                 <i class="fa-solid fa-route text-onomo-yellow"></i> 
@@ -313,6 +313,10 @@
                 <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_BACK_OFFICE</span> <span class="text-gray-500">Back Offices</span></li>
                 <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_CANTEEN</span> <span class="text-gray-500">Staff Canteen</span></li>
                 <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_HANDOVER</span> <span class="text-gray-500">End of Shift Handover</span></li>
+                <!-- Toilets -->
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_TOILET_LOBBY</span> <span class="text-gray-500">Lobby Toilet</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-200"><span class="font-bold text-gray-800">QR_TOILET_REST</span> <span class="text-gray-500">Restaurant Toilet</span></li>
+                <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_TOILET_STAFF</span> <span class="text-gray-500">Staff Toilet</span></li>
                 <!-- Dedicated -->
                 <li class="flex justify-between py-1.5 border-b border-gray-300"><span class="font-bold text-gray-800">QR_DEDICATED_TASK</span> <span class="text-gray-500">Dedicated Task</span></li>
                 <!-- Auth -->
@@ -347,4 +351,39 @@
         <i class="fa-solid fa-cloud-arrow-up text-onomo-yellow mr-2"></i> SAVED
     </div>
 
-    <!-- Firebase SDK &
+    <!-- Firebase SDK & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ENVIRONMENT SETUP
+        const appId = "onomo-checklist-app";
+        
+        // --- LIVE FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCOuyE3BXTHQ5L1iPMYJCiB7_GR63FucQQ",
+          authDomain: "onomo-attendant-app.firebaseapp.com",
+          projectId: "onomo-attendant-app",
+          storageBucket: "onomo-attendant-app.firebasestorage.app",
+          messagingSenderId: "478120958028",
+          appId: "1:478120958028:web:8d5de04bf8455fdd41bce9"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let currentUser = null;
+        
+        // --- UNIFIED DATA STRUCTURE ---
+        // Toilets are now integrated directly into the general workflow array.
+        const hourlyToilets = [
+            {qr: 'QR_TOILET_LOBBY', name: 'Lobby Toilet', reqPhoto: false},
+            {qr: 'QR_TOILET_REST', name: 'Restaurant Toilet', reqPhoto: false},
+            {qr: 'QR_TOILET_STAFF', name: 'Staff Toilet', reqPhoto: false}
+        ];
+
+        const SHIFTS = {
+            'Morning': {
+                general: [
+                    { time: '06:00', label: '06:00–07:00', title: 'Entrance, Parking & To
