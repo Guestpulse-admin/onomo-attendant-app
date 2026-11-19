@@ -145,7 +145,7 @@
                     </div>
                     <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
                         <h4 class="font-bold text-onomo-black mb-1 flex items-center gap-2"><i class="fa-solid fa-restroom text-gray-400"></i> Toilets (Lobby, Rest, Staff)</h4>
-                        <p class="text-gray-600 text-xs">Clean & sanitise urinals/toilets. Floors dry. Replenish toilet paper, soap, towels. Empty bins. No odours. (Scanned dynamically during shift).</p>
+                        <p class="text-gray-600 text-xs">Clean & sanitise urinals/toilets. Floors dry. Replenish toilet paper, soap, towels. Empty bins. No odours. (Scanned at start and end of shift).</p>
                     </div>
                 </div>
             </div>
@@ -164,13 +164,25 @@
             </div>
         </section>
 
-        <!-- Shift Workflow (Unified) -->
+        <!-- SECTION A: General Areas -->
         <div class="mt-6">
             <h3 class="font-bold text-lg text-onomo-black mb-3 flex items-center gap-2 uppercase">
-                <i class="fa-solid fa-route text-onomo-yellow"></i> 
+                <span class="bg-onomo-yellow text-onomo-black w-8 h-8 rounded-full flex items-center justify-center font-black">A</span> 
                 Shift Workflow
             </h3>
             <div id="section-general" class="space-y-4">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- SECTION B: Ad-Hoc / WhatsApp Requests -->
+        <div class="pt-4 border-t-2 border-dashed border-gray-300 mt-6">
+            <h3 class="font-bold text-lg text-onomo-black mb-3 flex items-center gap-2 uppercase">
+                <span class="bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-black">B</span> 
+                Ad-Hoc / WhatsApp Tasks
+            </h3>
+            <p class="text-xs text-gray-500 mb-3">Optional: Log any special requests received via radio or WhatsApp during the shift.</p>
+            <div id="section-adhoc" class="space-y-3">
                 <!-- Injected via JS -->
             </div>
         </div>
@@ -193,7 +205,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
-                    <textarea id="outstanding-tasks" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="3" oninput="triggerSave()" placeholder="Describe the specific location and issue (e.g. Major spill in Restroom)..."></textarea>
+                    <textarea id="outstanding-tasks" class="data-input w-full p-2.5 border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none text-sm transition-colors" rows="3" oninput="triggerSave()" placeholder="Describe the specific location and issue..."></textarea>
                 </div>
                 <button onclick="sendWhatsAppMaintenance()" class="w-full bg-green-500 text-white font-bold py-2.5 px-4 rounded-lg shadow hover:bg-green-600 transition flex items-center justify-center gap-2 text-sm">
                     <i class="fa-brands fa-whatsapp text-lg"></i> Alert Maintenance on WhatsApp
@@ -375,9 +387,9 @@
         const db = getFirestore(app);
         let currentUser = null;
         
-        // --- UNIFIED DATA STRUCTURE ---
-        // Toilets are integrated directly into the general workflow array.
-        const hourlyToilets = [
+        // --- UPDATED DATA STRUCTURE ---
+        // Toilets are only checked at the START and END of each shift.
+        const toiletTasks = [
             {qr: 'QR_TOILET_LOBBY', name: 'Lobby Toilet', reqPhoto: false},
             {qr: 'QR_TOILET_REST', name: 'Restaurant Toilet', reqPhoto: false},
             {qr: 'QR_TOILET_STAFF', name: 'Staff Toilet', reqPhoto: false}
@@ -386,32 +398,32 @@
         const SHIFTS = {
             'Morning': {
                 general: [
-                    { time: '06:00', label: '06:00–07:00', title: 'Entrance, Parking & Toilets', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}, {qr: 'QR_PARKING', name: 'Parking', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '07:00', label: '07:00–08:00', title: 'Reception Lobby & Toilets', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '08:00', label: '08:00–09:00', title: 'Restaurant & Toilets', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '09:00', label: '09:00–10:00', title: 'Corridors, Lifts & Toilets', tasks: [{qr: 'QR_CORRIDORS_F1', name: 'Floor 1', reqPhoto: true}, {qr: 'QR_CORRIDORS_F2', name: 'Floor 2', reqPhoto: true}, {qr: 'QR_CORRIDORS_F3', name: 'Floor 3', reqPhoto: true}, {qr: 'QR_CORRIDORS_F4', name: 'Floor 4', reqPhoto: true}, {qr: 'QR_CORRIDORS_F5', name: 'Floor 5', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '10:00', label: '10:00–11:00', title: 'Back Offices, Canteen & Toilets', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office', reqPhoto: true}, {qr: 'QR_CANTEEN', name: 'Canteen', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '11:00', label: '11:00–12:00', title: 'Restaurant Detail & Toilets', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '12:00', label: '12:00–13:00', title: 'Lobby, Entrances & Toilets', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, {qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '13:00', label: '13:00–14:00', title: 'Final Inspection, Handover & Toilets', tasks: [{qr: 'QR_HANDOVER', name: 'Handover', reqPhoto: true}, ...hourlyToilets] }
+                    { time: '06:00', label: '06:00–07:00', title: 'Shift Start: Entrances, Parking & Toilets', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}, {qr: 'QR_PARKING', name: 'Parking', reqPhoto: true}, ...toiletTasks] },
+                    { time: '07:00', label: '07:00–08:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}] },
+                    { time: '08:00', label: '08:00–09:00', title: 'Restaurant & Outside', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}] },
+                    { time: '09:00', label: '09:00–10:00', title: 'Corridors & Lift Lobbies', tasks: [{qr: 'QR_CORRIDORS_F1', name: 'Floor 1', reqPhoto: true}, {qr: 'QR_CORRIDORS_F2', name: 'Floor 2', reqPhoto: true}, {qr: 'QR_CORRIDORS_F3', name: 'Floor 3', reqPhoto: true}, {qr: 'QR_CORRIDORS_F4', name: 'Floor 4', reqPhoto: true}, {qr: 'QR_CORRIDORS_F5', name: 'Floor 5', reqPhoto: true}] },
+                    { time: '10:00', label: '10:00–11:00', title: 'Back Offices & Canteen', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office', reqPhoto: true}, {qr: 'QR_CANTEEN', name: 'Canteen', reqPhoto: true}] },
+                    { time: '11:00', label: '11:00–12:00', title: 'Restaurant Detail', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}] },
+                    { time: '12:00', label: '12:00–13:00', title: 'Lobby & Entrances', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, {qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}] },
+                    { time: '13:00', label: '13:00–14:00', title: 'Shift End: Handover & Toilets', tasks: [{qr: 'QR_HANDOVER', name: 'Handover', reqPhoto: true}, ...toiletTasks] }
                 ]
             },
             'Late': {
                 general: [
-                    { time: '14:00', label: '14:00–15:00', title: 'Shift Takeover, Parking & Toilets', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}, {qr: 'QR_PARKING', name: 'Parking', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '15:00', label: '15:00–16:00', title: 'Reception Lobby & Toilets', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '16:00', label: '16:00–17:00', title: 'Restaurant & Toilets', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '17:00', label: '17:00–18:00', title: 'Corridors, Lifts & Toilets', tasks: [{qr: 'QR_CORRIDORS_F1', name: 'Floor 1', reqPhoto: true}, {qr: 'QR_CORRIDORS_F2', name: 'Floor 2', reqPhoto: true}, {qr: 'QR_CORRIDORS_F3', name: 'Floor 3', reqPhoto: true}, {qr: 'QR_CORRIDORS_F4', name: 'Floor 4', reqPhoto: true}, {qr: 'QR_CORRIDORS_F5', name: 'Floor 5', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '18:00', label: '18:00–19:00', title: 'Back Offices, Canteen & Toilets', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office', reqPhoto: true}, {qr: 'QR_CANTEEN', name: 'Canteen', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '19:00', label: '19:00–20:00', title: 'Restaurant Detail & Toilets', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '20:00', label: '20:00–21:00', title: 'Reception Lobby & Toilets', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}, ...hourlyToilets] },
-                    { time: '21:00', label: '21:00–22:00', title: 'Final Inspection, Handover & Toilets', tasks: [{qr: 'QR_HANDOVER', name: 'Handover', reqPhoto: true}, ...hourlyToilets] }
+                    { time: '14:00', label: '14:00–15:00', title: 'Shift Takeover: Entrances, Parking & Toilets', tasks: [{qr: 'QR_ENTRANCE', name: 'Entrance', reqPhoto: true}, {qr: 'QR_PARKING', name: 'Parking', reqPhoto: true}, ...toiletTasks] },
+                    { time: '15:00', label: '15:00–16:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}] },
+                    { time: '16:00', label: '16:00–17:00', title: 'Restaurant', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}] },
+                    { time: '17:00', label: '17:00–18:00', title: 'Corridors & Lift Lobbies', tasks: [{qr: 'QR_CORRIDORS_F1', name: 'Floor 1', reqPhoto: true}, {qr: 'QR_CORRIDORS_F2', name: 'Floor 2', reqPhoto: true}, {qr: 'QR_CORRIDORS_F3', name: 'Floor 3', reqPhoto: true}, {qr: 'QR_CORRIDORS_F4', name: 'Floor 4', reqPhoto: true}, {qr: 'QR_CORRIDORS_F5', name: 'Floor 5', reqPhoto: true}] },
+                    { time: '18:00', label: '18:00–19:00', title: 'Back Offices & Canteen', tasks: [{qr: 'QR_BACK_OFFICE', name: 'Back Office', reqPhoto: true}, {qr: 'QR_CANTEEN', name: 'Canteen', reqPhoto: true}] },
+                    { time: '19:00', label: '19:00–20:00', title: 'Restaurant Detail', tasks: [{qr: 'QR_RESTAURANT', name: 'Restaurant', reqPhoto: true}] },
+                    { time: '20:00', label: '20:00–21:00', title: 'Reception Lobby', tasks: [{qr: 'QR_LOBBY', name: 'Lobby', reqPhoto: true}] },
+                    { time: '21:00', label: '21:00–22:00', title: 'Shift End: Handover & Toilets', tasks: [{qr: 'QR_HANDOVER', name: 'Handover', reqPhoto: true}, ...toiletTasks] }
                 ]
             }
         };
 
         const SUPERVISOR_TASKS = [
-            "All hourly locations and toilets verified",
+            "All locations and toilets verified",
             "Consumables replenished",
             "Maintenance issues reported",
             "Shift handover received"
@@ -552,7 +564,7 @@
             }
         }
 
-        // --- NEW: Dynamic Action Buttons (Handles Toilet scans seamlessly) ---
+        // --- Dynamic Action Buttons ---
         function getActionBtnsHTML(baseKey, expectedQr, label, reqPhoto) {
             const scanKey = 'scan_' + baseKey;
             const photoKey = 'photo_' + baseKey;
@@ -604,13 +616,13 @@
         // --- Render UI ---
         function renderUI() {
             const shiftBlocks = SHIFTS[appState.currentShift];
-            let genHtml = '';
             
             // Render Dedicated Task Button
             const dtContainer = document.getElementById('dedicated-task-btn-container');
             if (dtContainer) dtContainer.innerHTML = getSinglePhotoBtnHTML('photo_dedicated_task');
 
-            // Section: Unified General Workflow (Includes Toilets automatically)
+            // Section A: General Workflow
+            let genHtml = '';
             shiftBlocks.general.forEach(block => {
                 const safeTimeId = sanitizeId(block.time); 
                 let scansHtml = '';
@@ -642,6 +654,24 @@
                 </div>`;
             });
             document.getElementById('section-general').innerHTML = genHtml;
+
+            // Section B: Ad-Hoc / WhatsApp Requests
+            let adhocHtml = '';
+            for (let i = 1; i <= 3; i++) {
+                adhocHtml += `
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2">
+                    <input type="text" id="adhoc_${i}_desc" class="data-input w-full p-2 text-sm border border-gray-300 rounded-lg focus:border-onomo-yellow outline-none bg-white placeholder-gray-400" placeholder="Request ${i} details (e.g. Lobby spill)" oninput="triggerSave()">
+                    <div class="flex justify-between items-center">
+                        <span id="adhoc-photo-container-${i}"></span>
+                        <div class="flex items-center gap-2">
+                            <label for="check_adhoc_${i}" class="text-xs font-bold text-gray-500 uppercase cursor-pointer">Done</label>
+                            <input type="checkbox" id="check_adhoc_${i}" class="data-input check-large" onchange="triggerSave()">
+                        </div>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('section-adhoc').innerHTML = adhocHtml;
+
 
             // Render Supervisor Checks
             const supContainer = document.getElementById('supervisor-checks');
@@ -716,6 +746,14 @@
                 accGen.querySelector('div').innerHTML = scansHtml;
             });
             
+            // Render Ad-Hoc Photos dynamically (avoid losing focus on text inputs)
+            for (let i = 1; i <= 3; i++) {
+                const container = document.getElementById(`adhoc-photo-container-${i}`);
+                if (container) {
+                    container.innerHTML = getSinglePhotoBtnHTML(`photo_adhoc_${i}`);
+                }
+            }
+
             // Update Supervisor Scans dynamically
             const supScansContainer = document.getElementById('supervisor-scans');
             if (supScansContainer) {
@@ -758,7 +796,7 @@
 
             const shiftBlocks = SHIFTS[appState.currentShift];
             
-            // Unified iteration for General AND Toilets
+            // Unified iteration for Section A
             shiftBlocks.general.forEach(block => {
                 const safeTimeId = sanitizeId(block.time);
                 block.tasks.forEach(t => {
@@ -771,6 +809,8 @@
                     }
                 });
             });
+            
+            // NOTE: Ad-Hoc Requests (Section B) are optional and NOT included in required scans
             
             // Dedicated & Supervisor
             appState.totalRequiredScans += 1; // Dedicated photo
@@ -945,23 +985,6 @@
 
             if (scannedText === expectedText) {
                 
-                // Toilet Cooldown Check (45 mins) - Ensure they don't just scan the same toilet back to back
-                if (expectedText.includes('TOILET')) {
-                    const lastScanKey = 'last_scan_time_' + activeScanState.expectedQr;
-                    const lastScan = appState.data[lastScanKey];
-                    const nowMs = Date.now();
-                    
-                    if (lastScan && (nowMs - lastScan < 45 * 60 * 1000)) {
-                        const errToast = document.getElementById('alert-toast');
-                        document.getElementById('alert-title').innerText = "Cooldown Active";
-                        document.getElementById('alert-message').innerText = "Scanned recently. Wait 45 mins between checks.";
-                        errToast.classList.remove('hidden');
-                        setTimeout(() => errToast.classList.add('hidden'), 4000);
-                        return; // Abort saving the scan
-                    }
-                    appState.data[lastScanKey] = nowMs;
-                }
-
                 appState.data[activeScanState.keyId] = true;
                 
                 const now = new Date();
@@ -1052,7 +1075,7 @@
                 body += `None reported.\n\n`;
             }
             
-            body += `SHIFT WORKFLOW (Includes Toilets):\n`;
+            body += `SECTION A: SHIFT WORKFLOW\n`;
             body += `----------------------------------------------\n`;
             shiftBlocks.general.forEach(block => {
                 const safeTimeId = sanitizeId(block.time);
@@ -1062,6 +1085,20 @@
                     body += `    - ${t.name}: ${m}\n`;
                 });
             });
+
+            body += `\nSECTION B: AD-HOC / WHATSAPP REQUESTS\n`;
+            body += `----------------------------------------------\n`;
+            let adhocCount = 0;
+            for (let i = 1; i <= 3; i++) {
+                if (d[`adhoc_${i}_desc`]) {
+                    adhocCount++;
+                    const done = d[`check_adhoc_${i}`] ? 'COMPLETED' : 'PENDING';
+                    body += `${adhocCount}. ${d[`adhoc_${i}_desc`]} [${done}]\n`;
+                }
+            }
+            if (adhocCount === 0) {
+                body += `No ad-hoc requests logged.\n`;
+            }
             
             body += `\nSUPERVISOR VERIFICATION:\n`;
             body += `----------------------------------------------\n`;
